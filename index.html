@@ -50,6 +50,7 @@ body.touch #spd b{font-size:34px}
 #bA{width:calc(var(--u)*1.15);height:calc(var(--u)*1.15);right:calc(var(--u)*.25);bottom:calc(var(--u)*.25);color:#7dffb0}
 #bB{width:calc(var(--u)*.95);height:calc(var(--u)*.95);right:calc(var(--u)*1.55);bottom:calc(var(--u)*.15);color:#ff9bb8}
 #bF{width:calc(var(--u)*1);height:calc(var(--u)*1);right:calc(var(--u)*.35);bottom:calc(var(--u)*1.6);color:#ff7a7a}
+#bU.hid{opacity:0!important;transform:scale(.5)!important;pointer-events:none!important}
 #bU{width:calc(var(--u)*.85);height:calc(var(--u)*.85);right:calc(var(--u)*1.7);bottom:calc(var(--u)*1.45);color:#ffe08a}
 #bF.armed{border-color:#ff5a5a;box-shadow:0 0 22px #ff3b3b88}
 body.car .foot{display:none}body:not(.car) .carx{display:none}
@@ -5464,7 +5465,7 @@ body.touch #hint{left:50%!important;top:auto!important;bottom:calc(14px + var(--
 #gsub{position:fixed;z-index:6;left:50%;bottom:calc(9vh + var(--sab));transform:translateX(-50%);width:min(78vw,820px);text-align:center;pointer-events:none;
  font:500 clamp(15px,1.9vw,21px)/1.3 var(--ui);color:#fff;text-shadow:0 0 3px #000,0 1px 2px #000,0 0 8px #000c;opacity:0;transition:opacity .2s}
 #gsub.on{opacity:1}#gsub b{font-weight:700}
-body.touch #gsub{bottom:calc(10px + var(--sab));width:min(54vw,560px);font-size:clamp(13px,1.7vw,18px)}
+body.touch #gsub{bottom:calc(58px + var(--sab));width:min(54vw,560px);font-size:clamp(13px,1.7vw,18px)}
 @media (orientation:portrait){body.touch #gsub{bottom:calc(var(--u)*3.1 + var(--sab));width:84vw}}
 @media (max-height:430px){#area b{font-size:22px!important}#area span{font-size:12px!important}#cashv{font-size:26px!important}#wpa{font-size:20px!important}#clk{top:calc(138px + var(--sat))!important}#wnt{top:calc(158px + var(--sat))!important}body:not(.touch) #area{bottom:calc(14px + var(--sab))!important}}
 #area b{font:italic 400 32px/1 var(--disp)!important;letter-spacing:.02em;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000!important}
@@ -5568,6 +5569,24 @@ body.touch #wnt{top:calc(174px + var(--sat))}#wnt i{width:clamp(18px,2.4vw,24px)
 {const eu=Engine.prototype.use;Engine.prototype.use=function(force){const P=this.player,c=!P.car?this.nearCar:null,was=!!(c&&c.ai&&!c.wreck);const r=eu.call(this,force);if(was&&P.car===c)Wanted.crime(1.2);return r}}
 {const up=Engine.prototype.update;Engine.prototype.update=function(dt){up.call(this,dt);Wanted.update(dt)}}
 Wanted.init();
+/* ===== Fahrzeugschaden wie in GTA V: Unfälle beschädigen das Auto, der Motor qualmt, fängt Feuer und explodiert nach ein paar Sekunden ===== */
+{const up=Car.prototype.update;Car.prototype.update=function(dt,ctl){const v0=Math.hypot(this.vx,this.vz);up.call(this,dt,ctl);
+ const e=this.e;if(this.boat||this.wreck||!e||!e.player)return;const P=e.player,v1=Math.hypot(this.vx,this.vz),dv=v0-v1;
+ /* Aufprall = plötzlicher Geschwindigkeitsverlust (normales Bremsen bleibt weit darunter) */
+ if(dv>4.5&&(this.crashCD||0)<=0){const d=(dv-3.5)*.55*(P.car===this?1:.7);this.crashCD=.25;
+  e.damageCar(this,d,this.x+Math.sin(this.h)*1.8,this.y+.7,this.z+Math.cos(this.h)*1.8);if(P.car===this){e.camR.shake=Math.min(.6,(e.camR.shake||0)+dv*.03);if(dv>12)P.damage((dv-12)*2.2,'Unfall')}}
+ if(this.crashCD>0)this.crashCD-=dt;
+ const hp=this.hp==null?10:this.hp;if(hp>=5){this.burnT=0;return}
+ const near=Math.abs(this.x-P.x)<110&&Math.abs(this.z-P.z)<110,fx=this.x+Math.sin(this.h)*1.55,fz=this.z+Math.cos(this.h)*1.55,fy=this.y+1.05;
+ if(near&&(e.frame&3)==0){const k=hp<2.5?1:.6;e.fx.alp.emit(fx+rand(-.25,.25),fy,fz+rand(-.25,.25),rand(-.4,.4),rand(1,1.8),rand(-.4,.4),.16*k+.3*(1-k),.15*k+.3*(1-k),.15*k+.31*(1-k),.5,rand(1.2,2),rand(.8,1.4),-.15,1.4,2.2)}
+ if(hp<2.5){if(near&&(e.frame&1)==1){e.fx.fire(fx,fy-.2,fz);if(hp<1.5)e.fx.fire(fx+rand(-.5,.5),fy,fz+rand(-.5,.5))}this.burnT=(this.burnT||0)+dt;
+  if(P.car===this&&this.burnT>.5&&!this.warned){this.warned=true;e.hud.say(TX('Das Auto brennt – raus hier!','The car is on fire – get out!'),'',3)}
+  if(this.burnT>6){this.burnT=0;this.warned=false;e.explodeCar(this)}}}}
+/* Ein/Aus-Knopf (Handy) nur zeigen, wenn es etwas zu tun gibt: neben einem Auto, im Auto, am Ladentresen oder an einer Tür */
+{const up=Engine.prototype.update;Engine.prototype.update=function(dt){up.call(this,dt);if(!this.input.touch||(this.frame&3))return;const b=document.getElementById('bU'),l=document.getElementById('bUl');if(!b)return;
+ const P=this.player,shop=typeof Shop!='undefined'&&Shop.near(),door=typeof Doors!='undefined'&&Doors.cur,show=!P.dead&&!!(P.car||this.nearCar||shop||door),
+  t=P.car?'AUS':this.nearCar?'EIN':shop?'LADEN':door?'TÜR':'';
+ b.classList.toggle('hid',!show);if(l&&t&&l.textContent!==t)l.textContent=t}}
 /* ===== Nacht-Fülllicht für die Spielfigur (wie GTA V): warmes Licht von den Laternen in der Nähe + schwaches Kamera-Fülllicht, damit Figuren nachts keine schwarzen Silhouetten sind ===== */
 {const up=Engine.prototype.update;let FL=null;Engine.prototype.update=function(dt){up.call(this,dt);try{const P=this.player,c=this.camera;if(!P||!c)return;
  if(!FL){FL=new THREE.PointLight(0xffb470,0,9,1.6);FL.castShadow=false;this.scene.add(FL)}
