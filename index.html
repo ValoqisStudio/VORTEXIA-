@@ -329,7 +329,7 @@ body.touch #act{top:calc(150px + var(--sat))}body.touch #act b{font-size:26px}
  <p>Spielername <input id="pn" maxlength="24" autocomplete="off"></p>
  <p>Steuerung <select id="ctm"><option value="auto">Automatisch</option><option value="pc">PC / Tastatur</option><option value="touch">Handy / Touch</option></select></p>
  <p>Grafik <select id="q"><option value="auto">Auto</option><option value="ultra">Ultra</option><option value="high">Hoch</option><option value="mid">Mittel</option><option value="low">Niedrig</option></select></p>
- <p><label><input type="checkbox" id="sh" checked> Schatten</label> <label><input type="checkbox" id="rf" checked> Spiegelungen (Ultra)</label> <label><input type="checkbox" id="rn" checked> Regen</label></p><p><label><input type="checkbox" id="snd" checked> Sound</label> <label><input type="checkbox" id="tts" checked> Sprachausgabe</label> </p>
+ <p><label><input type="checkbox" id="sh" checked> Schatten</label> <label><input type="checkbox" id="rf" checked> Spiegelungen (Ultra)</label> <label><input type="checkbox" id="rn" checked> Regen</label></p><p><label><input type="checkbox" id="snd" checked> Sound</label> <label><input type="checkbox" id="tts" checked> Stimmen (ElevenLabs)</label> </p>
  <p>Lautstärke <input type="range" id="vol" min="0" max="100" value="80"></p>
  <p>Stimmen <input type="range" id="vv" min="0" max="100" value="90"></p>
  <p>Sprache der Figuren <select id="lang"><option value="de">Deutsch</option><option value="en">English</option></select></p>
@@ -3314,7 +3314,7 @@ class Engine{
   this.showL.intensity=0;if(this.charSel)Char.update(dt);else if(this.intro){this.introT+=dt;this.camR.introFly(dt,this.introT)}else if(this.dbgCam){const d=this.dbgCam;this.camera.position.set(d[0],d[1],d[2]);this.camera.lookAt(d[3],d[4],d[5])}else if(this.playing)this.camR.update(dt,I);else this.camR.attract(dt);
   World.update(dt);Online.tick(dt);this.shopNear=this.playing?Shop.near():null;Wallet.boostT=Math.max(0,Wallet.boostT-dt);this.cash.update(dt);this.fx.update(dt);this.rain.update(this.camPos,!!this.zone);const fl=this.extras.update(dt,t);
   this.updateLights(dt,fl);this.hud.update(dt,this.playing);
-  this.sfx.update(P.car,this.set.rn&&!this.zone?1:0);
+  this.sfx.update(P.car,this.set.rn&&!this.zone&&typeof World!='undefined'&&['rain','storm'].includes(World.st.wx)?(World.st.wx=='storm'?1.3:1):0);
   /* Telemetrie (alle 60 s, ~200 Byte) */
   if(this.playing&&(this.beatT-=dt)<=0){this.beatT=60;FB.beat({name:(UI.name||'').slice(0,24),dev:this.input.touch?'Mobile':'PC',q:this.qk,fps:Math.round(this.fps),x:Math.round(px),z:Math.round(pz),v:'1.0'})}}
  updateLights(dt,fl){const P=this.player,cp=this.camPos,Z=this.zone;
@@ -3644,11 +3644,8 @@ const Voice={list:[],cur:null,gT:0,
  say(sp,text,o){const E=VX;o=o||{};if(!text)return false;const prio=o.prio||1,C=this.cur;
   if(!o.force&&C&&C.t>0&&(prio<=1||prio<=C.prio))return false;
   this.cur={npc:sp,text,t:Math.min(6,2.4+text.length*.055),who:o.who||'',prio};{const A=sp&&sp.rig&&sp.rig.b&&sp.rig.b.__av;if(A)A.talkT=Math.max(A.talkT,this.cur.t*.9)}
-  if(E.set.tts===false||!('speechSynthesis' in window))return true;
-  try{const ss=speechSynthesis;if(ss.speaking||ss.pending)ss.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=this.lng()=='en'?'en-US':'de-DE';
-   const v=this.pick(!!o.fem,o.seed|0);if(v){u.voice=v;u.lang=v.lang}u.pitch=clamp(o.pitch||1,.1,2);u.rate=clamp(o.rate||1,.5,2);
-   const P=E.player,d=sp&&sp!==P?Math.hypot(sp.x-P.x,sp.z-P.z):0,vv=(E.set.vv==null?90:E.set.vv)/100,vo=(E.set.vol==null?80:E.set.vol)/100;
-   u.volume=clamp(vv*(.35+.65*vo)*clamp(1.25-d/18,.25,1),0,1);if(u.volume>.01)ss.speak(u)}catch(x){}return true},
+  /* Keine Browser-Roboterstimme mehr: Gesprochen wird nur mit echten ElevenLabs-Aufnahmen (siehe VOX), sonst nur Untertitel */
+  return true},
  npc(n,k,prio,cd){if(!n||n.keeper)return false;const now=performance.now()/1000;if((n.vT||0)>now)return false;
   if(n.vs==null)n.vs=(Math.random()*1000)|0;const fem=n.mat&&n.mat.userData.uFace?n.mat.userData.uFace.value.x>.5:false,r=(n.vs%97)/97;
   const ok=this.say(n,this.line(k),{prio,fem,seed:n.vs,pitch:fem?1.08+r*.3:.74+r*.24,rate:.96+r*.14});if(ok){n.vT=now+(cd||8);const A=n.rig&&n.rig.b&&n.rig.b.__av;if(A&&/greet|morning|evening|night/.test(k)){A.waveT=2.6;A.talkT=0}}return ok},
