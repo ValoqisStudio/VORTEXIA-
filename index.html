@@ -3263,7 +3263,7 @@ class Engine{
   const mc=$('#map'),ms=Math.round(mc.getBoundingClientRect().width*Math.min(2,devicePixelRatio||1))||300;mc.width=mc.height=ms}
  /* Dynamische Auflösung: hält die Bildrate stabil (Ziel 60 FPS) */
  dynRes(dt){this.ft=lerp(this.ft,dt*1000,.05);this.drT=(this.drT||0)+dt;if(this.drT<2.5)return;
-  let d=this.dyn;if(this.ft>19.5)d=Math.max(.55,d-.12);else if(this.ft<14.5&&d<1)d=Math.min(1,d+.08);if(d!==this.dyn){this.dyn=d;this.resize()}this.drT=0}
+  let d=this.dyn;if(this.ft>19.5)d=Math.max(this.dynMin||.55,d-.12);else if(this.ft<14.5&&d<1)d=Math.min(1,d+.08);if(d!==this.dyn){this.dyn=d;this.resize()}this.drT=0}
  inView(x,y,z,r){_sph.center.set(x,y,z);_sph.radius=r;return this.frustum.intersectsSphere(_sph)}
  heightAt(x,z,y){let h=ground(x,z);const c=this.col,n=c.n,X0=c.x0,X1=c.x1,Z0=c.z0,Z1=c.z1,T=c.tp;
   for(let i=0;i<n;i++){const t=T[i];if(t>50||t<=h||t>y+.55)continue;if(x>X0[i]-.12&&x<X1[i]+.12&&z>Z0[i]-.12&&z<Z1[i]+.12)h=t}return h}
@@ -5569,6 +5569,21 @@ body.touch #wnt{top:calc(174px + var(--sat))}#wnt i{width:clamp(18px,2.4vw,24px)
 {const eu=Engine.prototype.use;Engine.prototype.use=function(force){const P=this.player,c=!P.car?this.nearCar:null,was=!!(c&&c.ai&&!c.wreck);const r=eu.call(this,force);if(was&&P.car===c)Wanted.crime(1.2);return r}}
 {const up=Engine.prototype.update;Engine.prototype.update=function(dt){up.call(this,dt);Wanted.update(dt)}}
 Wanted.init();
+/* ===== Kein Ruckeln: Läuft das Spiel trotz kleinster Auflösung dauerhaft unter ~30 FPS, wird die Grafikstufe
+   automatisch eine Stufe gesenkt (Ultra → Hoch → Mittel → Niedrig) und für den nächsten Start gemerkt.
+   Wählt man im Menü selbst eine Stufe, gilt wieder die eigene Wahl. ===== */
+{const ORDER=['low','mid','high','ultra'];
+ const rq=Engine.prototype.resolveQ;Engine.prototype.resolveQ=function(){let k=rq.call(this);const cap=LS.get('vx_qcap',null);
+  if(cap&&cap.from===k&&ORDER.indexOf(cap.to)>=0&&ORDER.indexOf(cap.to)<ORDER.indexOf(k))k=cap.to;return k};
+ const aq=Engine.prototype.applyQuality;Engine.prototype.applyQuality=function(first){
+  if(this._setQ!==undefined&&this._setQ!==this.set.q&&!this._autoQ)LS.set('vx_qcap',null);this._setQ=this.set.q;
+  aq.call(this,first);const mob=this.input.touch;this.dynMin=this.qk==='low'?(mob?.4:.45):(mob?.5:.55)};
+ const dr=Engine.prototype.dynRes;Engine.prototype.dynRes=function(dt){const now=performance.now(),raw=this._lagT0?Math.min(now-this._lagT0,250):16;this._lagT0=now;
+  this.rft=lerp(this.rft||16,raw,.06);dr.call(this,raw/1000);
+  if(this.rft>34&&(this.dyn<=this.dynMin+.01||this.rft>60))this.slowT=(this.slowT||0)+raw/1000;else this.slowT=Math.max(0,(this.slowT||0)-raw/2000);
+  if(this.slowT>4&&this.qk!=='low'&&now-(this.qT||0)>8000){const to=ORDER[ORDER.indexOf(this.qk)-1];LS.set('vx_qcap',{from:rq.call(this),to});
+   this._autoQ=true;this.applyQuality();this._autoQ=false;this.slowT=0;this.qT=now;
+   this.hud.say(TX('Grafik automatisch angepasst – damit nichts ruckelt.','Graphics adjusted automatically to keep it smooth.'),'',3)}}}
 /* ===== Fahrzeugschaden wie in GTA V: Unfälle beschädigen das Auto, der Motor qualmt, fängt Feuer und explodiert nach ein paar Sekunden ===== */
 {const up=Car.prototype.update;Car.prototype.update=function(dt,ctl){const v0=Math.hypot(this.vx,this.vz);up.call(this,dt,ctl);
  const e=this.e;if(this.boat||this.wreck||!e||!e.player)return;const P=e.player,v1=Math.hypot(this.vx,this.vz),dv=v0-v1;

@@ -23,6 +23,23 @@ Die Dateien sind je ca. 20 MB groß, weil 3D-Engine, Modelle und Stimmen eingebe
 Einmalig im Repository: **Settings → Pages → Source: Deploy from a branch → Branch `main` / `/ (root)` → Save**.
 Danach läuft das Spiel unter https://valoqisstudio.github.io/VORTEXIA-/ (Ultra: `…/VORTEXIA-/Vortexia_ULTRA.html`).
 
+## In die eigene Webseite einbauen
+
+Wenn GitHub Pages aktiv ist (siehe oben), reicht diese eine Zeile in deiner Webseite:
+
+```html
+<iframe src="https://valoqisstudio.github.io/VORTEXIA-/" style="width:100%;height:100vh;border:0" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
+```
+
+Für die Ultra-Version `…/VORTEXIA-/Vortexia_ULTRA.html` als `src` eintragen.
+Alternativ `index.html` direkt bei deinem Webhoster hochladen und verlinken.
+
+## Flüssig spielen
+
+Ruckelt das Spiel, senkt es automatisch erst die Auflösung und dann die Grafikstufe
+(Ultra → Hoch → Mittel → Niedrig) und merkt sich die passende Stufe für den nächsten Start.
+Im Menü unter Einstellungen kannst du jederzeit selbst eine Stufe wählen.
+
 ## Steuerung
 
 - **PC:** WASD laufen, Maus umsehen, Shift rennen, E einsteigen, Q Waffe, Tab Figurenwechsel (Vincent, Darnell, Rocco)
