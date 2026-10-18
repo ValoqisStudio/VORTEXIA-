@@ -4876,12 +4876,12 @@ const VOX={base:'vox/out/',buf:{},env:{},ld:{},bad:{},vb:null,src:null,g:null,pa
  kOf(sp){const E=VX;if(!sp)return null;if(sp===E.player)return this.plK();if(sp.keeper&&sp.zone)return this.SHOP[sp.zone]||null;
   if(sp.vs!=null){const fem=sp.mat&&sp.mat.userData.uFace?sp.mat.userData.uFace.value.x>.5:false;return this.npcK(sp,fem)}return null},
  avOf(sp){return sp&&(sp.rig&&sp.rig.b&&sp.rig.b.__av||sp.mesh&&sp.mesh.userData&&sp.mesh.userData.av)||null},
- bus(){const c=this.ctx();if(!this.vb){this.vb=c.createGain();this.vb.connect(c.destination)}
-  const E=VX,vv=(E.set.vv==null?90:E.set.vv)/100,vo=(E.set.vol==null?80:E.set.vol)/100;this.vb.gain.value=1.1*vv*(.35+.65*vo);return this.vb},
+ bus(){const c=this.ctx();if(!this.vb){this.vb=c.createGain();/* Limiter: Stimmen lauter, ohne zu übersteuern */const L=c.createDynamicsCompressor();L.threshold.value=-12;L.knee.value=6;L.ratio.value=8;L.attack.value=.003;L.release.value=.18;this.vb.connect(L);L.connect(c.destination)}
+  const E=VX,vv=(E.set.vv==null?90:E.set.vv)/100,vo=(E.set.vol==null?80:E.set.vol)/100;this.vb.gain.value=1.9*vv*(.35+.65*vo);return this.vb},
  /* Satz c der Stimme k abspielen; near = ohne Entfernungs-Dämpfung (eigene Figur, Verkäufer im Laden) */
  play(sp,k,c,near){const ctx=this.ctx(),B=this.buf[k];if(!ctx||!B||!c||!(c[2]>0))return false;if(ctx.state=='suspended')try{ctx.resume()}catch(x){}
   this.stop();const s=ctx.createBufferSource(),g=ctx.createGain(),p=ctx.createPanner();s.buffer=B;
-  p.panningModel=VX.qk=='low'?'equalpower':'HRTF';p.distanceModel='inverse';p.refDistance=near?7:2.8;p.rolloffFactor=1;p.maxDistance=90;
+  p.panningModel=VX.qk=='low'?'equalpower':'HRTF';p.distanceModel='inverse';p.refDistance=near?8:4.5;p.rolloffFactor=.8;p.maxDistance=90;
   s.connect(g);g.connect(p);p.connect(this.bus());const st=ctx.currentTime+.015;g.gain.setValueAtTime(1,st);
   s.start(st,c[1],c[2]+.04);Object.assign(this,{src:s,g,pan:p,t0:st,c,sp,k,A:this.avOf(sp)});this.place();
   s.onended=()=>{if(this.src===s){this.src=null;if(this.A)this.A.amp=0}};return true},
