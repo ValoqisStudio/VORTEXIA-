@@ -3203,7 +3203,7 @@ const _v1=new THREE.Vector3(),_sph=new THREE.Sphere(),_pm=new THREE.Matrix4();
 class Engine{
  constructor(){
   const cvs=$('#c');this.cvs=cvs;
-  this.r=new THREE.WebGLRenderer({canvas:cvs,antialias:false,powerPreference:'high-performance',stencil:false,depth:true});
+  this.r=new THREE.WebGLRenderer({canvas:cvs,antialias:true,powerPreference:'high-performance',stencil:false,depth:true});
   this.r.setClearColor(0x05060c);this.r.info.autoReset=false;this.r.shadowMap.enabled=true;this.r.shadowMap.type=THREE.PCFSoftShadowMap;this.r.localClippingEnabled=false;
   this.scene=new THREE.Scene();this.camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.12,1400);this.camPos=this.camera.position;
   this.frustum=new THREE.Frustum();this.col=new Collision();this.input=new Input();this.sfx=new SFX();
@@ -3255,7 +3255,7 @@ class Engine{
   const active={ultra:40,high:34,mid:24,low:14}[key];this.npcs.forEach((n,i)=>{n.active=n.kind!='walk'||i<active;if(!n.active){n.mesh.visible=false;this.col.setCircle(n.id,0,0,0)}});
   this.rain.setCount({ultra:9000,high:6500,mid:3500,low:1600}[key]);this.rain.on=this.set.rn&&(typeof World=='undefined'||['rain','storm','snow'].includes(World.st.wx));
   this.scene.fog=q.vol?null:new THREE.FogExp2(0x1a1030,this.set.fg*.0011);
-  this.basePR=Math.min(devicePixelRatio||1,q.pr*(mob?.85:1));this.dyn=1;
+  this.basePR=Math.min(devicePixelRatio||1,mob?Math.max(q.pr,{low:1.25,mid:1.4,high:1.6,ultra:2}[key]||1.25):q.pr);this.dyn=1;
   if(!first||prevSh!==shadows)this.scene.traverse(o=>{if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)}});
   if(!this.post)this.post=new PostFX(this.r);this.resize();{const tm=this.post.on?THREE.NoToneMapping:THREE.ACESFilmicToneMapping;if(this.r.toneMapping!==tm){this.r.toneMapping=tm;this.r.toneMappingExposure=.5;this.scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)})}}this.sfx.on=this.set.snd;this.input.sens=this.set.cs/10}
  resize(){const w=innerWidth,h=innerHeight,pr=this.basePR*this.dyn;this.r.setPixelRatio(pr);this.r.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
@@ -5577,7 +5577,7 @@ Wanted.init();
   if(cap&&cap.from===k&&ORDER.indexOf(cap.to)>=0&&ORDER.indexOf(cap.to)<ORDER.indexOf(k))k=cap.to;return k};
  const aq=Engine.prototype.applyQuality;Engine.prototype.applyQuality=function(first){
   if(this._setQ!==undefined&&this._setQ!==this.set.q&&!this._autoQ)LS.set('vx_qcap',null);this._setQ=this.set.q;
-  aq.call(this,first);const mob=this.input.touch;this.dynMin=this.qk==='low'?(mob?.4:.45):(mob?.5:.55)};
+  aq.call(this,first);const mob=this.input.touch;this.dynMin=this.qk==='low'?.7:.78};
  const dr=Engine.prototype.dynRes;Engine.prototype.dynRes=function(dt){const now=performance.now(),raw=this._lagT0?Math.min(now-this._lagT0,250):16;this._lagT0=now;
   this.rft=lerp(this.rft||16,raw,.06);dr.call(this,raw/1000);
   if(this.rft>34&&(this.dyn<=this.dynMin+.01||this.rft>60))this.slowT=(this.slowT||0)+raw/1000;else this.slowT=Math.max(0,(this.slowT||0)-raw/2000);
