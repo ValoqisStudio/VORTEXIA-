@@ -18,14 +18,16 @@ Open-World-Spiel im Stil von Los Santos, komplett in **einer HTML-Datei** – l�
 
 Die Dateien sind je ca. 20 MB groß, weil 3D-Engine, Modelle und Stimmen eingebettet sind – dafür braucht das Spiel kein Internet.
 
-## Direkt im Browser spielen (GitHub Pages)
+## Direkt im Browser spielen
 
-Einmalig im Repository: **Settings → Pages → Source: Deploy from a branch → Branch `main` / `/ (root)` → Save**.
-Danach läuft das Spiel unter https://valoqisstudio.github.io/VORTEXIA-/ (Ultra: `…/VORTEXIA-/Vortexia_ULTRA.html`).
+- Normal: https://valoqisstudio.github.io/VORTEXIA-/
+- Ultra: https://valoqisstudio.github.io/VORTEXIA-/Vortexia_ULTRA.html
+
+Die Webseite kommt aus dem Zweig `gh-pages` – Änderungen dort hin pushen (`git push origin main:gh-pages`).
 
 ## In die eigene Webseite einbauen
 
-Wenn GitHub Pages aktiv ist (siehe oben), reicht diese eine Zeile in deiner Webseite:
+Es reicht diese eine Zeile in deiner Webseite:
 
 ```html
 <iframe src="https://valoqisstudio.github.io/VORTEXIA-/" style="width:100%;height:100vh;border:0" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
