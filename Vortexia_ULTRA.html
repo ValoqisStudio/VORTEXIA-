@@ -297,6 +297,48 @@ body.touch #act{top:calc(150px + var(--sat))}body.touch #act b{font-size:26px}
 /* Ladebildschirm: dunkler Verlauf hinter Tipp und Fortschritt (Lesbarkeit) */
 #ld::after{content:"";position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(#0d061800,#0d0618d9 75%);z-index:1;pointer-events:none}
 .ld-in{z-index:2}
+
+/* ===== Kino-Intro: VALOQIS STUDIO präsentiert -> VORTEXIA (nur CSS-Transforms/Opacity = GPU, kein Ruckeln; Größen hängen an vmin/vh, nichts wird verzerrt) ===== */
+#intro .in-studio,#intro .in-title{transform:none;transition:opacity .6s}
+#intro .in-studio{background:radial-gradient(55vmax 55vmax at 50% 45%,#2a1610 0,#000 70%)}
+#intro .medal{width:min(64vmin,48vh,380px);height:min(64vmin,48vh,380px);aspect-ratio:auto;border-radius:50%;animation:none;opacity:0}
+#intro .medal img{width:100%;height:100%;object-fit:contain}
+#intro .in-studio.on .medal{animation:ciMedal 2.2s cubic-bezier(.16,.9,.24,1) .15s both}
+#intro .in-studio.on .medal::after{animation:shine 1.3s 1.25s ease-in-out forwards}
+@keyframes ciMedal{0%{opacity:0;transform:perspective(800px) translateZ(-500px) rotateY(-220deg) rotateX(12deg);filter:brightness(0)}45%{opacity:1;filter:brightness(1.6)}70%{transform:perspective(800px) translateZ(30px) rotateY(8deg)}100%{opacity:1;transform:perspective(800px) translateZ(0) rotateY(0);filter:brightness(1)}}
+#intro .medal{box-shadow:0 0 0 2px #d0956a88,0 0 60px #e0a06a55,0 30px 80px #000}
+#intro .in-studio.on .medal{box-shadow:0 0 0 2px #d0956a88,0 0 80px #ffb87a66,0 30px 80px #000}
+.ci-rays{position:absolute;left:50%;top:45%;width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;background:repeating-conic-gradient(from 0deg,#ffcf9a14 0 4deg,#0000 4deg 13deg);-webkit-mask:radial-gradient(closest-side,#000 8%,#0000 70%);mask:radial-gradient(closest-side,#000 8%,#0000 70%);opacity:0}
+.in-studio.on .ci-rays{animation:ciRays 4s linear .5s both}
+@keyframes ciRays{0%{opacity:0;transform:rotate(0)}30%{opacity:1}100%{opacity:.8;transform:rotate(40deg)}}
+.ci-streak{position:absolute;left:0;right:0;top:45%;height:2px;margin-top:-1px;background:linear-gradient(90deg,#0000,#ffd9b0 45%,#fff 50%,#ffd9b0 55%,#0000);box-shadow:0 0 18px 4px #ffb87a88;transform:scaleX(0);opacity:0}
+.in-studio.on .ci-streak{animation:ciStreak 1s cubic-bezier(.5,0,.2,1) both}
+@keyframes ciStreak{0%{transform:scaleX(0);opacity:1}60%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1) scaleY(30);opacity:0}}
+#intro .in-pres{margin-top:min(5vmin,28px);font:600 clamp(13px,3.2vmin,24px)/1 var(--ui);letter-spacing:.55em;padding-left:.55em;color:#f0c49c;opacity:1;transition:none;white-space:nowrap;text-shadow:0 0 14px #ff9a4566}
+#intro .in-pres span,#intro .in-sub span{display:inline-block;opacity:0;transform:translateY(.6em);filter:blur(6px)}
+#intro .in-studio.on .in-pres span{animation:ciChar .5s cubic-bezier(.2,.8,.2,1) both}
+#intro .in-title.on .in-sub span{animation:ciChar .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ciChar{to{opacity:1;transform:none;filter:none}}
+#intro .in-studio.out{opacity:0;transition:opacity .35s}
+#intro .in-studio.out #logo{transform:scale(1.6);filter:blur(10px);transition:transform .4s ease-in,filter .4s}
+.ci-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#fff 0,#ffe7c8 40%,#ffb06a 100%);opacity:0;pointer-events:none;z-index:3}
+.ci-flash.on{animation:ciFlash .9s ease-out both}
+@keyframes ciFlash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+#intro .in-title{background:radial-gradient(70% 70% at 50% 45%,#0000 40%,#000a 100%)}
+#intro .in-logo{width:min(760px,84vw,calc(56vh*600/430));animation:none!important;filter:drop-shadow(0 12px 40px #000c)}
+#intro .ci-logo-wrap{position:relative;opacity:0}
+#intro .in-title.on .ci-logo-wrap{animation:ciSlam .75s cubic-bezier(.55,0,.25,1.35) .05s both,ciShake .5s .62s linear both}
+@keyframes ciSlam{0%{opacity:0;transform:scale(4) rotate(-6deg);filter:blur(14px)}60%{opacity:1;filter:blur(0)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes ciShake{0%,100%{translate:0 0}15%{translate:-9px 5px}30%{translate:8px -6px}45%{translate:-6px 3px}60%{translate:4px -2px}80%{translate:-2px 1px}}
+.ci-shine{position:absolute;inset:0;pointer-events:none;-webkit-mask:var(--lm) center/contain no-repeat;mask:var(--lm) center/contain no-repeat;background:linear-gradient(110deg,#0000 40%,#ffffffcc 50%,#0000 60%) 200% 0/250% 100% no-repeat;mix-blend-mode:screen}
+#intro .in-title.on .ci-shine{animation:ciShine 1.1s 1.1s ease-in-out both}
+@keyframes ciShine{from{background-position:200% 0}to{background-position:-100% 0}}
+.ci-wave{position:absolute;left:50%;top:50%;width:min(70vmin,600px);height:min(70vmin,600px);margin:calc(min(70vmin,600px)/-2) 0 0 calc(min(70vmin,600px)/-2);border-radius:50%;border:3px solid #ffd27a;box-shadow:0 0 30px #ff9a45,inset 0 0 30px #ff9a45;opacity:0}
+#intro .in-title.on .ci-wave{animation:ciWave .9s .55s cubic-bezier(.1,.7,.3,1) both}
+@keyframes ciWave{0%{opacity:1;transform:scale(.2)}100%{opacity:0;transform:scale(2.6);border-width:1px}}
+#intro .in-sub{margin-top:min(3vmin,18px);font:700 clamp(11px,2.6vmin,22px)/1 var(--ui);letter-spacing:.5em;padding-left:.5em;white-space:nowrap;text-shadow:0 2px 10px #000}
+#intro .in-skip{z-index:4}
+@media (prefers-reduced-motion:reduce){#intro *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style></head><body>
 <canvas id="c"></canvas>
 <div class="hud" id="top"><button id="mb">☰ Menü</button></div>
@@ -315,7 +357,7 @@ body.touch #act{top:calc(150px + var(--sat))}body.touch #act b{font-size:26px}
 </div>
 
 <div class="scr on" id="ld"><canvas id="ldc"></canvas><div class="ld-in"><div class="ld-brand" data-logo=""></div><p class="ld-tip" id="tip"></p><div class="ld-row"><p id="boot">Engine wird geladen …</p><button id="tap" hidden>Tippen zum Starten</button></div><div class="ld-bar"><i id="ldp"></i></div></div></div>
-<div class="scr" id="intro"><div class="blk"></div><div class="in-studio"><div class="sweep"></div><div id="logo"></div><div class="in-pres">präsentiert</div></div><div class="in-title"><div class="in-logo" data-logo=""></div><div class="in-sub">WILLKOMMEN IN VORTEX CITY</div></div><div class="in-skip">Tippen zum Überspringen</div></div>
+<div class="scr" id="intro"><div class="blk"></div><div class="in-studio"><div class="ci-rays"></div><div class="ci-streak"></div><div id="logo"></div><div class="in-pres"></div></div><div class="ci-flash"></div><div class="in-title"><div class="ci-wave"></div><div class="ci-logo-wrap"><div class="in-logo" data-logo=""></div><div class="ci-shine"></div></div><div class="in-sub"></div></div><div class="in-skip">Tippen zum Überspringen</div></div>
 <div class="ov" id="o-name"><div class="box"><h1>Willkommen</h1><p>Wie heißen Sie?</p><input id="nm" maxlength="24" placeholder="Ihr Name" autocomplete="off"><br><button id="nok">Bestätigen</button><button id="nsk">Überspringen</button></div></div>
 <div class="ov" id="o-login"><div class="lg"><div class="lg-title" data-logo=""></div><div class="lg-sub">DIE STADT GEHÖRT DIR</div>
 <div class="lg-btns"><button id="lgg" class="lg-b g"><svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span>Mit Google anmelden<small>Fortschritt auf allen Geräten</small></span></button><button id="lgx" class="lg-b"><span>Als Gast spielen<small id="lgn"></small></span></button></div><p id="lgm" class="lg-m"></p></div></div>
@@ -3124,9 +3166,7 @@ function vxLogo(sub){const u='vl'+Math.random().toString(36).slice(2,7);
 <g clip-path="url(#${u}c)"><rect x="100" y="0" width="400" height="300" fill="url(#${u}s)"/><circle cx="300" cy="150" r="78" fill="url(#${u}u)"/><circle cx="300" cy="150" r="40" fill="#fff3c4"/>
 ${city}<rect x="100" y="222" width="400" height="60" fill="url(#${u}w)"/>${sky}${palm(214,.95,1)}${palm(392,1.05,-1)}${palm(236,.7,-1)}</g>
 <path d="${V}" fill="none" stroke="#0b0710" stroke-width="10" stroke-linejoin="round"/><path d="M146 20H258L300 186" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3"/>
-<g transform="translate(300 372) skewX(-9)" font-family="Anton,Impact,'Arial Narrow',sans-serif" font-size="122" text-anchor="middle" letter-spacing="3">
-<text x="5" y="7" fill="#0b0710" stroke="#0b0710" stroke-width="14" stroke-linejoin="round" textLength="548" lengthAdjust="spacingAndGlyphs">VORTEXIA</text>
-<text x="0" y="0" fill="#fff" stroke="#0b0710" stroke-width="10" stroke-linejoin="round" paint-order="stroke" textLength="548" lengthAdjust="spacingAndGlyphs">VORTEXIA</text></g>
+<g transform="translate(300 372) skewX(-9)"><g transform="translate(-274.0 0)"><path transform="translate(5 7)" d="M14.8 0 1.4-108.3H22L30-34.6L37-108.3H57.6L44.3 0Z M106.2 1Q93.2 1 86.4-6.9Q79.5-14.7 79.5-29.5V-81Q79.5-94.9 86.3-102.1Q93.1-109.3 106.2-109.3Q119.3-109.3 126.1-102.1Q132.9-94.9 132.9-81V-29.5Q132.9-14.7 126.1-6.9Q119.2 1 106.2 1ZM106.4-18.9Q111.3-18.9 111.3-28.5V-81.3Q111.3-89.3 106.5-89.3Q101.1-89.3 101.1-81.1V-28.4Q101.1-23.3 102.3-21.1Q103.6-18.9 106.4-18.9Z M158.1 0V-108.3H191.3Q199.6-108.3 203.9-104.5Q208.1-100.7 209.6-93.9Q211-87.1 211-78Q211-69.1 208.8-63.8Q206.5-58.5 200.3-56.5Q205.4-55.4 207.5-51.4Q209.5-47.4 209.5-41V0H188.2V-42.4Q188.2-47.1 186.3-48.3Q184.3-49.4 180-49.4V0ZM180.1-68.2H185.4Q189.9-68.2 189.9-78Q189.9-84.3 188.9-86.3Q187.9-88.2 185.2-88.2H180.1Z M243.9 0V-87.5H231.1V-108.3H278.4V-87.5H265.6V0Z M300.9 0V-108.3H344.2V-87.4H322.9V-66.3H343.4V-45.9H322.9V-21.1H345.6V0Z M366.1 0 377.7-57.4 368.5-108.3H389.7L395.3-71.1L400.2-108.3H421.5L412.2-57.4L423.8 0H401.9L395.1-42.3L388.1 0Z M445.7 0V-108.3H466.6V0Z M488.7 0 499.2-108.3H535.9L546.2 0H525.7L524.1-17.5H511.1L509.7 0ZM512.6-34.8H522.5L517.7-89.8H516.8Z" fill="#0b0710" stroke="#0b0710" stroke-width="14" stroke-linejoin="round"/><path d="M14.8 0 1.4-108.3H22L30-34.6L37-108.3H57.6L44.3 0Z M106.2 1Q93.2 1 86.4-6.9Q79.5-14.7 79.5-29.5V-81Q79.5-94.9 86.3-102.1Q93.1-109.3 106.2-109.3Q119.3-109.3 126.1-102.1Q132.9-94.9 132.9-81V-29.5Q132.9-14.7 126.1-6.9Q119.2 1 106.2 1ZM106.4-18.9Q111.3-18.9 111.3-28.5V-81.3Q111.3-89.3 106.5-89.3Q101.1-89.3 101.1-81.1V-28.4Q101.1-23.3 102.3-21.1Q103.6-18.9 106.4-18.9Z M158.1 0V-108.3H191.3Q199.6-108.3 203.9-104.5Q208.1-100.7 209.6-93.9Q211-87.1 211-78Q211-69.1 208.8-63.8Q206.5-58.5 200.3-56.5Q205.4-55.4 207.5-51.4Q209.5-47.4 209.5-41V0H188.2V-42.4Q188.2-47.1 186.3-48.3Q184.3-49.4 180-49.4V0ZM180.1-68.2H185.4Q189.9-68.2 189.9-78Q189.9-84.3 188.9-86.3Q187.9-88.2 185.2-88.2H180.1Z M243.9 0V-87.5H231.1V-108.3H278.4V-87.5H265.6V0Z M300.9 0V-108.3H344.2V-87.4H322.9V-66.3H343.4V-45.9H322.9V-21.1H345.6V0Z M366.1 0 377.7-57.4 368.5-108.3H389.7L395.3-71.1L400.2-108.3H421.5L412.2-57.4L423.8 0H401.9L395.1-42.3L388.1 0Z M445.7 0V-108.3H466.6V0Z M488.7 0 499.2-108.3H535.9L546.2 0H525.7L524.1-17.5H511.1L509.7 0ZM512.6-34.8H522.5L517.7-89.8H516.8Z" fill="#fff" stroke="#0b0710" stroke-width="10" stroke-linejoin="round" paint-order="stroke"/></g></g>
 ${sub?`<text x="300" y="418" text-anchor="middle" font-family="'Chakra Petch',system-ui,sans-serif" font-weight="700" font-size="21" letter-spacing="10" fill="#ffd27a">${sub}</text>`:''}</svg>`}
 const TIPS=['Halte RENNEN gedrückt (PC: Shift), um zu sprinten.','Mit der Handbremse (Leertaste / BREMSE) driftest du durch Kurven.','Waffen wechselst du mit 1–4, dem Mausrad oder dem Waffen-Symbol oben rechts.',
  'Im Club 77 wird immer getanzt.','Ein ganzer Tag in Vortex City dauert 20 Minuten – von Sonnenaufgang bis Mitternacht.','Drücke M (oder tippe auf die Minikarte) für die große Karte. Dort kannst du einen Wegpunkt setzen.','Am Bootssteg im Seepark kannst du ein Motorboot mieten oder angeln.','Im Döner Palast und im Späti bekommst du Lieferjobs.','Fahr mit einem Auto in den gelben Kreis am Vortex Boulevard – dann startet ein Straßenrennen.','Bei Neon Style gibt es Sonnenbrillen, Goldketten und Rucksäcke.','Online siehst du andere Spieler mit Namensschild und Lebensbalken.',
@@ -3161,12 +3201,15 @@ const Intro={
   if(E.input.touch){try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(x){}}
   this.stopArt&&this.stopArt();$('#ld').classList.remove('on');const it=$('#intro');it.classList.add('on','bars');const blk=it.querySelector('.blk');blk.style.opacity=1;
   $('#logo').innerHTML=STUDIO_LOGO?`<div class="medal"><img src="${STUDIO_LOGO}" alt="VALOQIS STUDIO"></div>`:`<div class="vq-mark">${VQ_SVG}</div><div class="vq-name">VALOQIS</div><div class="vq-sub">STUDIO</div>`;
-  const T=this.timers=[],at=(ms,f)=>T.push(setTimeout(f,ms));
-  at(250,()=>{$('.in-studio').classList.add('on');E.sfx.swell()});
-  at(2700,()=>$('.in-studio').classList.remove('on'));
-  at(3200,()=>{blk.style.opacity=0;E.introT=0;E.intro=true;$('.in-title').classList.add('on');E.sfx.hit()});
-  at(6100,()=>$('.in-title').classList.remove('on'));
-  at(6700,()=>this.finish());
+  const chars=(el,t,d0,dt)=>{el.innerHTML=[...t].map((c,i)=>`<span style="animation-delay:${(d0+i*dt).toFixed(2)}s">${c==' '?'&nbsp;':c}</span>`).join('')};
+  chars($('.in-pres'),'präsentiert',1.25,.07);chars($('.in-sub'),'WILLKOMMEN IN VORTEX CITY',1.15,.035);
+  const lg=$('.in-title .in-logo svg');if(lg){try{$('.ci-shine').style.setProperty('--lm',`url("data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(lg))}")`)}catch(x){}}
+  const T=this.timers=[],at=(ms,f)=>T.push(setTimeout(f,ms)),st=$('.in-studio'),ti=$('.in-title'),fl=$('.ci-flash');
+  at(200,()=>{st.classList.add('on');E.sfx.swell()});
+  at(3500,()=>st.classList.add('out'));
+  at(3800,()=>{st.classList.remove('on','out');blk.style.opacity=0;fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');E.introT=0;E.intro=true;ti.classList.add('on');setTimeout(()=>E.sfx.hit(),550)});
+  at(7600,()=>ti.classList.remove('on'));
+  at(8200,()=>this.finish());
   this.skip=()=>this.finish();it.onclick=this.skip;this.kd=ev=>this.finish();addEventListener('keydown',this.kd)},
  finish(){if(this.done)return;this.done=true;(this.timers||[]).forEach(clearTimeout);removeEventListener('keydown',this.kd);const E=this.E;E.intro=false;
   const it=$('#intro');it.classList.remove('on','bars');$('.in-title').classList.remove('on');$('.in-studio').classList.remove('on');
