@@ -17,9 +17,29 @@ Nur Schritt 6 (Hochladen per Terminal) braucht deinen PC.
 - Spieler (automatisch anonym angemeldet) dürfen **nur** das, was das Spiel wirklich braucht:
   Bugs melden, ihr eigenes Lebenszeichen schreiben, ihre eigene Position senden, schießen.
 - Jedes Feld wird geprüft (Typ, Länge). So kann niemand HTML-Code oder Müll in deine Admin-Zentrale schmuggeln.
+- **Spam-Bremse:** Niemand kann die Datenbank mit tausenden Einträgen fluten.
+  Jeder Spieler darf nur so oft schreiben, wie das Spiel es wirklich tut (Details in Schritt 7).
+- **Kein Fern-Abschuss mehr:** Treffen kann nur, wer selbst im Spiel ist, lebt und nah genug am Opfer steht.
+  Der Schaden pro Schuss darf nicht höher sein als bei der echten Waffe.
+- **Geister verschwinden:** Spieler, die seit 2 Minuten kein Lebenszeichen mehr senden, werden automatisch entfernt.
 - Bugs lesen/löschen, Telemetrie sehen, Wetter/Durchsagen für alle ändern: **nur du** (Admin).
 - Wer Admin ist, steht **nur auf dem Server** (in der Konsole). Im Spielcode steht keine E-Mail und keine UID.
 - Alles, was nicht ausdrücklich erlaubt ist, ist verboten.
+
+---
+
+## 0. Wichtig: Spiel und Regeln gehören zusammen
+
+Die Regeln in diesem Ordner passen **nur zur neuen Spielversion** (mit Spam-Bremse).
+Mit einer alten Spielversion funktionieren Online-Modus, „Bug melden“ und Telemetrie nicht mehr – und umgekehrt.
+
+Darum immer **beides gleichzeitig** erneuern:
+
+1. Neue `index.html` hochladen.
+2. Die Ultra-Version neu bauen (`python3 tools/build_ultra.py`) und `Vortexia_ULTRA.html` auch hochladen.
+3. Direkt danach die Regeln veröffentlichen (Schritte 2 und 3).
+
+Spieler, die das Spiel noch offen haben, laden einmal neu – dann klappt alles wieder.
 
 ---
 
@@ -96,7 +116,7 @@ und einmal in der Realtime Database (damit du Wetter, Durchsagen usw. für **all
 1. **Realtime Database** → **Daten**.
 2. Fahre mit der Maus über die oberste Zeile (deine Datenbank-Adresse) und klicke auf **+**.
 3. Name: `admins`. Den Wert leer lassen und im gleichen Kästchen nochmal auf das kleine **+** klicken.
-4. In der neuen Zeile: Name = **deine UID**, Wert = `true`.
+4. In der neuen Zeile: Name = **deine UID**, Wert = `true` (genau so, **ohne** Anführungszeichen).
 5. **Hinzufügen** klicken.
 
 Danach sieht es so aus:
@@ -106,13 +126,18 @@ admins
   └─ aB3dE…(deine UID): true
 ```
 
+> Nur der Wert `true` zählt. Steht dort `false` oder `"true"` (mit Anführungszeichen, also Text), ist man **kein** Admin.
+
 ### d) Testen
 
 Spiel neu laden → mit Google angemeldet bleiben → im Menü erscheint der **Admin**-Knopf.
 Die Admin-Zentrale zeigt Bug-Tracker und Telemetrie. Wenn du im Online-Modus das Wetter änderst, sehen es alle.
 
 Weitere Admins: einfach Schritt a–c mit der UID der anderen Person wiederholen.
-Admin wegnehmen: das Dokument in `admins` (Firestore) **und** den Eintrag unter `admins` (Realtime Database) löschen.
+
+**Admin wegnehmen:**
+- Firestore: das Dokument in `admins` **löschen** (nur ein Feld ändern reicht nicht).
+- Realtime Database: den Eintrag unter `admins` löschen oder auf `false` setzen.
 
 ### Für Fortgeschrittene: Custom Claim statt Einträgen
 
@@ -137,6 +162,7 @@ Den kann man aber nur mit einem kleinen Skript setzen:
 
 - Spiel öffnen → **Bug melden** → abschicken. In der Konsole unter **Firestore → Daten → bugs** taucht die Meldung auf.
 - Spiel in zwei Browsern (oder Handy + PC) öffnen → bei beiden **Online** drücken → ihr seht euch gegenseitig.
+- Aufeinander schießen: Treffer ziehen Leben ab, „… wurde ausgeschaltet“ erscheint beim anderen.
 - Mit einem normalen (nicht Admin-)Konto darf der Admin-Knopf **nicht** funktionieren.
 - In der Konsole gibt es bei beiden Regeln einen **Regel-Playground** (Rules Playground), um Regeln auszuprobieren.
 
@@ -152,16 +178,24 @@ reichen die Schritte 1–5 (Regeln in der Konsole einfügen) und du kannst diese
    npm install -g firebase-tools
    firebase login
    ```
-2. Einen neuen Ordner anlegen, z. B. `vortexia-online`, und hineinlegen:
-   - `index.html` (die komplette HTML, z. B. über die Kopier-Seite → **Herunterladen**)
-   - `Vortexia_ULTRA.html` (wenn du die Ultra-Version auch willst)
-   - `firebase.json`, `firestore.rules`, `database.rules.json` aus diesem Ordner
+2. Einen neuen Ordner anlegen, z. B. `vortexia-online`, und so befüllen:
+   ```
+   vortexia-online/
+   ├─ firebase.json          (aus diesem Ordner)
+   ├─ firestore.rules        (aus diesem Ordner)
+   ├─ database.rules.json    (aus diesem Ordner)
+   └─ public/
+      ├─ index.html          (die komplette HTML, z. B. über die Kopier-Seite → Herunterladen)
+      └─ Vortexia_ULTRA.html (wenn du die Ultra-Version auch willst)
+   ```
+   Hast du dein Projekt schon mit `firebase init` angelegt, gibt es den Ordner `public` schon –
+   dann einfach `public/index.html` ersetzen und `firebase.json` + die zwei Regel-Dateien daneben legen.
 3. Im Terminal in diesen Ordner wechseln und hochladen:
    ```
    cd vortexia-online
    firebase deploy --project DEINE-PROJEKT-ID
    ```
-   Das lädt die Webseite **und** beide Regeln hoch. Nur die Regeln hochladen:
+   Das lädt die Webseite **und** beide Regeln gleichzeitig hoch (genau richtig, siehe Schritt 0). Nur die Regeln hochladen:
    ```
    firebase deploy --only firestore:rules,database --project DEINE-PROJEKT-ID
    ```
@@ -169,22 +203,84 @@ reichen die Schritte 1–5 (Regeln in der Konsole einfügen) und du kannst diese
    (die Ultra-Version unter `…/Vortexia_ULTRA.html`).
 
 `firebase.json` sorgt dafür, dass die HTML-Dateien nicht lange im Browser zwischengespeichert werden.
-Neue Versionen kommen also sofort bei den Spielern an. Die Regel-Dateien selbst werden nicht als Webseite veröffentlicht.
+Neue Versionen kommen also sofort bei den Spielern an. Hochgeladen wird nur, was im Ordner `public` liegt.
 
 ---
 
-## 7. Gut zu wissen
+## 7. Spam-Bremse – was da passiert
 
-- **Telemetrie räumt sich nicht selbst auf.** Jeder Spielstart legt ein kleines Dokument in `sessions` an.
+Jeder Spieler darf nur so oft schreiben, wie das Spiel es wirklich tut. Das Spiel schreibt dafür bei jedem
+Senden einen Zeitstempel mit (unter `rl` = „rate limit“). Ist der letzte zu frisch, lehnt der Server ab.
+
+| Was | Erlaubt | Das Spiel macht |
+|---|---|---|
+| Position senden | höchstens alle 40 ms | alle 100 ms |
+| Schuss | höchstens alle 30 ms | Maschinenpistole alle 75 ms |
+| Treffer | Pistole 80 ms · MP 30 ms · Schrotflinte 200 ms · Scharfschützengewehr 200 ms | 170 · 75 · 750 · 1050 ms |
+| Schaden pro Treffer | Pistole 12 · MP 8 · Schrotflinte 58 · Scharfschützengewehr 41 | genau so viel |
+| Reichweite Treffer | Pistole 105 m · MP 85 m · Schrotflinte 50 m · Scharfschützengewehr 185 m | 90 · 70 · 34 · 170 m |
+| „ausgeschaltet“ melden | höchstens alle 2 s | frühestens nach 3,6 s |
+| Bug melden | 1 pro Minute | – |
+| Telemetrie | 1 Dokument pro Spieler, höchstens alle 10 s | alle 60 s |
+
+Gut zu wissen:
+
+- Die Schrotflinte schickt jetzt **einen** Treffer mit dem Schaden aller Kugeln (statt 8 einzelne).
+- Wer innerhalb einer Minute einen zweiten Bug meldet, bekommt „Gespeichert (lokal …)“ – die Meldung bleibt dann nur auf seinem Gerät.
+- Die Zeitstempel liegen in der Realtime Database unter `rooms/main/rl` und in Firestore in der Sammlung `rl`.
+  Beides ist winzig. Du kannst es in der Konsole **jederzeit löschen** – es geht nichts kaputt.
+- **Geister** (Spieler ohne Lebenszeichen seit 2 Minuten) und alte Schüsse/Treffer (älter als 1 Minute)
+  räumen die Spiele der anderen Spieler automatisch weg. Als Admin kannst du in der Konsole unter
+  `rooms/main/p` jeden Spieler-Eintrag sofort löschen.
+- Änderst du im Spiel den Schaden oder die Reichweite der Waffen (`WEAPONS`), musst du die Zahlen in
+  `database.rules.json` (Abschnitte `to`, `d` und `rl`) anpassen. Schaden im Netz = `dmg` × 12.
+
+---
+
+## 8. Empfohlen: App Check (Schutz gegen Skripte)
+
+Alle Bremsen gelten **pro Spieler-Konto**. Anonyme Konten kann aber jeder mit einem kleinen Skript neu anlegen
+(Firebase begrenzt das nur pro Internetanschluss). Mit **App Check** dürfen nur noch echte Aufrufe von deiner
+Spiel-Webseite die Datenbank benutzen. Das ist kostenlos, braucht aber eine kleine Änderung im Spiel:
+
+1. <https://www.google.com/recaptcha/admin> → neue Website → **reCAPTCHA v3** → als Domains deine Spiel-Adressen eintragen
+   (z. B. `DEINE-PROJEKT-ID.web.app`, `valoqisstudio.github.io`, deine eigene Domain).
+   Du bekommst einen **Websiteschlüssel** und einen **geheimen Schlüssel**.
+2. Firebase-Konsole → **App Check** → **Apps** → deine Web-App → **reCAPTCHA** → den **geheimen** Schlüssel eintragen → Speichern.
+3. Im Spiel (`index.html`, danach Ultra neu bauen) **genau diese Stelle** suchen:
+   ```js
+   firebase.initializeApp(FIREBASE_CONFIG);
+   ```
+   und ersetzen durch (mit **deinem Websiteschlüssel**):
+   ```js
+   firebase.initializeApp(FIREBASE_CONFIG);await this.load(b+'firebase-app-check-compat.js');firebase.appCheck().activate('DEIN-WEBSITESCHLÜSSEL',true);
+   ```
+4. Firebase-Konsole → **App Check** → **APIs**: Ein paar Tage nur zuschauen (Messwerte).
+   Wenn fast alle Anfragen als „überprüft“ angezeigt werden: bei **Realtime Database** und **Cloud Firestore** auf **Erzwingen** stellen.
+
+> Nach dem Erzwingen klappen Online-Modus, „Bug melden“ und Telemetrie nur noch von den eingetragenen Webseiten aus.
+> Wer das Spiel als Datei vom Handy öffnet, kann weiter alleine spielen – nur ohne Online-Funktionen.
+
+---
+
+## 9. Gut zu wissen
+
+- **Telemetrie:** Jeder Spieler hat jetzt genau **ein** Dokument in `sessions` (Dokument-ID = seine UID).
+  Alte Einträge mit kurzen Zufalls-IDs (aus der alten Spielversion) kannst du in der Konsole löschen.
   Tipp: Firestore → **TTL-Richtlinien** (Time-to-live) → Sammlungsgruppe `sessions`, Feld `ts`.
   Dann löscht Firebase alte Einträge automatisch (meist innerhalb von 24 Stunden).
 - **Online-Modus kostet Datenvolumen.** Jeder Spieler sendet 10-mal pro Sekunde seine Position an alle anderen.
   Im kostenlosen Spark-Tarif hat die Realtime Database 10 GB Download pro Monat und höchstens 100 gleichzeitige Verbindungen.
   Bei 10 Spielern gleichzeitig ist das Volumen nach grob 12–15 Stunden gemeinsamer Spielzeit aufgebraucht.
   Schau ab und zu unter **Realtime Database → Nutzung** nach.
-- **Kick und Bann gibt es (noch) nicht.** Die Regeln verhindern Betrug wie falsche Durchsagen,
-  fremde Spieler bewegen oder riesigen Schaden. Rauswerfen kann man aber niemanden.
+- **Was die Regeln NICHT verhindern können:** Jeder Spieler meldet seine Position selbst. Ein Betrüger kann sich also
+  per Skript direkt neben dich „beamen“ und dann so schnell treffen, wie die Bremse erlaubt (höchstens ca. 290 Schaden
+  pro Sekunde, ein normaler Spieler schafft ca. 90). Er muss dafür aber sichtbar im Spiel und in deiner Nähe sein.
+  Ganz verhindern könnte das nur ein eigener Spiel-Server.
+- **Kick und Bann gibt es (noch) nicht.** Du kannst als Admin aber den Eintrag eines Spielers unter `rooms/main/p`
+  löschen (er taucht wieder auf, solange sein Spiel läuft).
 - **KI-Steuerung:** Die Cloud Function `vxAI` ist nicht in diesem Projekt. Ohne sie nutzt die Admin-KI den eingebauten
-  deutschen Befehls-Parser. Falls du sie später baust: Die Function muss **selbst** prüfen, ob der Aufrufer Admin ist.
+  deutschen Befehls-Parser. Falls du sie später baust: Die Function muss **selbst** prüfen, ob der Aufrufer Admin ist
+  (am besten auch App Check verlangen).
 - **Niemals** die Regeln auf `allow read, write: if true;` oder `if request.auth != null;` stellen.
   Dann wäre jeder Google-Nutzer Admin und könnte deine Bug-Meldungen löschen.

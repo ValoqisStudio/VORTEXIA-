@@ -2627,7 +2627,7 @@ function rayCar(c,ox,oz,oy,dx,dz,sl,maxT){const fx=Math.sin(c.h),fz=Math.cos(c.h
  for(let k=0;k<2;k++){if(Math.abs(ld[k])<1e-6){if(Math.abs(lo[k])>ext[k])return-1;continue}let a=(-ext[k]-lo[k])/ld[k],b=(ext[k]-lo[k])/ld[k];if(a>b){const q=a;a=b;b=q}t0=Math.max(t0,a);t1=Math.min(t1,b);if(t0>t1)return-1}
  const y=oy+sl*t0;return(y>c.y+.15&&y<c.y+1.5)?t0:-1}
 Player.prototype.shoot=function(){
- const e=this.e,col=e.col,cam=e.cam,w=this.ars?this.ars.w:WEAPONS[0],ox=this.x,oz=this.z,oy=this.y+1.42;
+ const e=this.e,col=e.col,cam=e.cam,w=this.ars?this.ars.w:WEAPONS[0],ox=this.x,oz=this.z,oy=this.y+1.42,hd=new Map();
  this.gun.updateWorldMatrix(true,false);this.muz.getWorldPosition(this.mp);
  for(let k=0;k<w.pel;k++){
   let dx=this.aimV.x,dz=this.aimV.z,sl=this.aimV.y;const hl=Math.hypot(dx,dz);dx/=hl;dz/=hl;sl/=hl;
@@ -2642,9 +2642,10 @@ Player.prototype.shoot=function(){
   e.fx.shot(this.mp,ex,ey,ez,kind,dx,dz,k>0);
   if(hitN){hitN.hurt(w.dmg,dx,dz);this.hits++;this.hitT=.25;e.hud.hit()}
   if(hitC){e.damageCar(hitC,w.dmg,ex,ey,ez);this.hitT=.2;e.hud.hit()}
-  if(hitR){Online.hit(hitR,w.dmg*12);this.hits++;this.hitT=.25;e.hud.hit()}
+  if(hitR){hd.set(hitR,(hd.get(hitR)||0)+w.dmg*12);this.hits++;this.hitT=.25;e.hud.hit()}
   if(k==0&&window.Online&&Online.on)Online.shot(this.mp,ex,ey,ez,this.ars?this.ars.i:0)}
- this.recoil=1;cam.kick=Math.min(.09,cam.kick+w.kick);this.shots++;e.sfx.shot(this.ars?this.ars.i:0);e.alertNPCs(ox,oz,34)};
+ /* Treffer pro Spieler zusammengefasst senden (Schrot: alle Kugeln = 1 Ereignis) */
+ hd.forEach((d,p)=>Online.hit(p,d));this.recoil=1;cam.kick=Math.min(.09,cam.kick+w.kick);this.shots++;e.sfx.shot(this.ars?this.ars.i:0);e.alertNPCs(ox,oz,34)};
 Player.prototype.damage=function(d,src){const e=this.e;if(this.dead||e.god)return;this.hp=Math.max(0,(this.hp==null?100:this.hp)-d);this.hurtT=.4;e.camR.shake=Math.max(e.camR.shake,.18);e.hud.health();
  if(this.hp<=0)e.wasted(src)};
 
@@ -2664,15 +2665,23 @@ class LocalNet{
 class RTDBNet{
  constructor(){this.kind='Firebase'}
  async connect(me,h){await FB.load(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-database-compat.js`);this.db=firebase.database();this.me=me;
-  const root=this.root=this.db.ref('rooms/main');this.mine=root.child('p/'+me);this.mine.onDisconnect().remove();
-  const st=s=>{if(s.key!==me)h.state(s.key,s.val())};root.child('p').on('child_added',st);root.child('p').on('child_changed',st);root.child('p').on('child_removed',s=>h.leave(s.key));
+  this.off=0;const root=this.root=this.db.ref('rooms/main');this.mine=root.child('p/'+me);
+  /* onDisconnect nach JEDEM (Neu-)Verbinden setzen – sonst bleibt nach einem Funkloch ein Geist stehen */
+  this.db.ref('.info/connected').on('value',s=>{if(s.val())this.mine.onDisconnect().remove()});
+  /* Geister = Einträge ohne Lebenszeichen (ts) seit 2 min: nicht anzeigen, sondern löschen (Regeln erlauben das jedem) */
+  const fresh=v=>!!v&&v.ts>Date.now()+this.off-120000,st=s=>{if(s.key===me)return;const v=s.val();if(fresh(v))h.state(s.key,v);else s.ref.remove().catch(()=>{})};root.child('p').on('child_added',st);root.child('p').on('child_changed',st);root.child('p').on('child_removed',s=>h.leave(s.key));
   root.child('e').orderByChild('t').startAt(Date.now()-3000).on('child_added',s=>{const v=s.val();if(v&&v.f!==me)h.event(v,v.f)});
   root.child('w').on('value',s=>{const v=s.val();if(v)h.world(v)});
-  this.db.ref('.info/serverTimeOffset').on('value',s=>this.off=s.val()||0)}
- send(d){this.mine.set(d).catch(()=>{})}
- event(d){d.f=this.me;d.t=firebase.database.ServerValue.TIMESTAMP;const r=this.root.child('e').push(d);setTimeout(()=>r.remove().catch(()=>{}),8000)}
+  this.db.ref('.info/serverTimeOffset').on('value',s=>this.off=s.val()||0);
+  /* Aufräumen (nach 5 s, dann jede Minute): Ereignisse älter als 1 min + Geister in p löschen */
+  const sw=()=>{root.child('e').orderByChild('t').endAt(Date.now()+this.off-65000).limitToFirst(200).once('value',s=>s.forEach(c=>{c.ref.remove().catch(()=>{})}));root.child('p').once('value',s=>s.forEach(c=>{if(c.key!==me&&!fresh(c.val()))c.ref.remove().catch(()=>{})}))};
+  setTimeout(sw,5000);this.sw=setInterval(sw,60000)}
+ /* Position + Bremse rl/<UID>/p in EINEM Schreibvorgang (Regeln verlangen das), ts = Serverzeit */
+ send(d){const T=firebase.database.ServerValue.TIMESTAMP;d.ts=T;this.root.update({['p/'+this.me]:d,['rl/'+this.me+'/p']:T}).catch(()=>{})}
+ /* Ereignis + Bremse rl/<UID>/<Art> + rl/<UID>/e (= Schlüssel) in EINEM Schreibvorgang */
+ event(d){const T=firebase.database.ServerValue.TIMESTAMP,k=this.root.child('e').push().key;d.f=this.me;d.t=T;this.root.update({['e/'+k]:d,['rl/'+this.me+'/'+d.k]:T,['rl/'+this.me+'/e']:k}).catch(()=>{});setTimeout(()=>this.root.child('e/'+k).remove().catch(()=>{}),8000)}
  world(d){return this.root.child('w').update(d)}
- close(){if(!this.root)return;this.root.child('p').off();this.root.child('e').off();this.root.child('w').off();this.mine.remove().catch(()=>{})}
+ close(){if(!this.root)return;clearInterval(this.sw);this.db.ref('.info/connected').off();this.root.child('p').off();this.root.child('e').off();this.root.child('w').off();this.mine.remove().catch(()=>{})}
 }
 const _tp=new THREE.Vector3();
 class Peer{
@@ -3178,8 +3187,8 @@ const FB={on:false,user:null,db:null,auth:null,err:'',sid:Math.random().toString
  isAdmin(){return!!(this.adminOK&&this.user&&!this.user.isAnonymous)},
  async login(){const p=new firebase.auth.GoogleAuthProvider();try{await this.auth.signInWithPopup(p)}catch(x){if(/popup/i.test(x.code||''))await this.auth.signInWithRedirect(p);else throw x}},
  async logout(){await this.auth.signOut()},
- async bug(d){if(!this.on||!this.user)throw new Error('offline');d.uid=this.user.uid;d.ts=firebase.firestore.FieldValue.serverTimestamp();return this.db.collection('bugs').add(d)},
- beat(d){if(!this.on||!this.user)return;d.uid=this.user.uid;d.ts=firebase.firestore.FieldValue.serverTimestamp();this.db.collection('sessions').doc(this.sid).set(d,{merge:true}).catch(()=>{})},
+ async bug(d){if(!this.on||!this.user)throw new Error('offline');d.uid=this.user.uid;d.ts=firebase.firestore.FieldValue.serverTimestamp();const r=this.db.collection('bugs').doc(),b=this.db.batch();b.set(r,d);b.set(this.db.collection('rl').doc(d.uid),{t:d.ts,b:r.id});return b.commit()},
+ beat(d){if(!this.on||!this.user)return;d.uid=this.user.uid;d.ts=firebase.firestore.FieldValue.serverTimestamp();this.db.collection('sessions').doc(this.user.uid).set(d,{merge:true}).catch(()=>{})},
  watchBugs(cb){return this.db.collection('bugs').orderBy('ts','desc').limit(80).onSnapshot(q=>cb(q.docs.map(d=>({id:d.id,...d.data()}))),x=>cb(null,x))},
  watchSessions(cb){const since=new Date(Date.now()-3*60e3);return this.db.collection('sessions').where('ts','>',since).onSnapshot(q=>cb(q.docs.map(d=>({id:d.id,...d.data()}))),x=>cb(null,x))},
  delBug(id){return this.db.collection('bugs').doc(id).delete()}
@@ -3416,7 +3425,7 @@ const UI={name:LS.get('vx_name','')||LS.get('vx_guest','')||(()=>{const g='Gast-
     $('#t-bugs').innerHTML=`<p>${list.length} Meldungen ${FB.on?'(live aus Firestore)':'(lokal)'}</p><table><tr><th>Zeit</th><th>Spieler</th><th>Text</th><th>X / Y / Z</th><th>Gerät</th><th></th></tr>`+
      list.map(b=>`<tr><td>${esc(fmt(b.ts))}</td><td>${esc(b.name)}</td><td>${esc(b.text)}${b.err?'<br><small style="opacity:.6">'+esc(b.err)+'</small>':''}</td><td>${b.x} / ${b.y} / ${b.z}<br><button data-tp="${b.x},${b.y},${b.z}">⇢ hin</button></td><td>${esc(b.dev)} · ${esc(b.q)} · ${b.fps} FPS</td><td><button data-del="${esc(b.id)}">✕</button></td></tr>`).join('')+'</table>';
     $$('#t-bugs [data-tp]').forEach(b=>b.onclick=()=>{const[x,y,z]=b.dataset.tp.split(',').map(Number);const P=E.player;if(P.car)E.use();P.teleport(x,y+.5,z);this.play()});
-    $$('#t-bugs [data-del]').forEach(b=>b.onclick=()=>{const id=b.dataset.del;if(FB.on&&id[0]!='L')FB.delBug(id);else{LS.set('vx_bugs',LS.get('vx_bugs',[]).filter(x=>x.id!=id));this.tab('bugs')}})};
+    $$('#t-bugs [data-del]').forEach(b=>b.onclick=()=>{const id=b.dataset.del;if(FB.on&&!/^L\d{12,14}$/.test(id))FB.delBug(id);else{LS.set('vx_bugs',LS.get('vx_bugs',[]).filter(x=>x.id!=id));this.tab('bugs')}})};
    if(FB.on)this.unsub=FB.watchBugs(draw);else draw(LS.get('vx_bugs',[]))}
   if(t=='tele'){const sess=[];if(FB.on)this.unsub=FB.watchSessions(l=>{if(l){sess.length=0;sess.push(...l)}});
    const up=()=>{const i=E.r.info,P=E.player,p=P.car||P;$('#t-tele').innerHTML=`<table>

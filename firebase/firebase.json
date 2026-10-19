@@ -6,15 +6,11 @@
     "rules": "database.rules.json"
   },
   "hosting": {
-    "public": ".",
+    "public": "public",
     "ignore": [
       "firebase.json",
-      "firestore.rules",
-      "database.rules.json",
-      "ANLEITUNG.md",
       "**/.*",
       "**/node_modules/**",
-      "tools/**",
       "*.log"
     ],
     "cleanUrls": false,

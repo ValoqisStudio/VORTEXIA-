@@ -51,6 +51,12 @@ Ruckelt das Spiel, senkt es automatisch erst die Auflösung und dann die Grafiks
 (Ultra → Hoch → Mittel → Niedrig) und merkt sich die passende Stufe für den nächsten Start.
 Im Menü unter Einstellungen kannst du jederzeit selbst eine Stufe wählen.
 
+## Stimmen
+
+- **Vincent, Darnell, Rocco, Dönermann und Verkäufer:** echte ElevenLabs-Aufnahmen.
+- **Passanten (Jan, Oscar, Livia, Berta):** vorerst mit der freien Open-Source-Sprachsynthese [Piper](https://github.com/rhasspy/piper) erzeugt (Stimmen *Thorsten* und *Kerstin*, beide CC0) – natürlich klingend, keine Browser-Roboterstimme. Sobald wieder ElevenLabs-Guthaben da ist, werden sie durch ElevenLabs-Aufnahmen ersetzt.
+- Die Browser-Vorlesestimme (Roboterstimme) wird nicht mehr benutzt. Regengeräusche gibt es keine mehr.
+
 ## Steuerung
 
 - **PC:** WASD laufen, Maus umsehen, Shift rennen, E einsteigen, Q Waffe, Tab Figurenwechsel (Vincent, Darnell, Rocco)

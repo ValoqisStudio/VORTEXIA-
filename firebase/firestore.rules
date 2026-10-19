@@ -23,6 +23,7 @@ service cloud.firestore {
     //   ODER
     //   b) es gibt ein Dokument  admins/<deine UID>  (legst du von Hand in der Konsole an).
     // Kein Spieler kann sich selbst eintragen – die Sammlung "admins" ist für das Spiel gesperrt.
+    // Admin wegnehmen = das Dokument LÖSCHEN (ein Feld ändern reicht nicht).
     function isAdmin() {
       return signedIn()
         && request.auth.token.firebase.sign_in_provider != 'anonymous'
@@ -33,6 +34,12 @@ service cloud.firestore {
     // Text-Feld: muss ein String sein und darf höchstens max Zeichen haben
     function str(v, max) {
       return v is string && v.size() <= max;
+    }
+
+    // Zahl-Feld: echte, endliche Zahl zwischen -lim und lim
+    // (NaN und Unendlich fallen durch, weil jeder Vergleich mit ihnen falsch ist)
+    function num(v, lim) {
+      return v is number && v > -lim && v < lim;
     }
 
     // ---------- Admin-Ausweis für das Spiel ----------
@@ -50,6 +57,22 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ---------- Bremse für Bug-Meldungen (rl = rate limit) ----------
+    // Ein Dokument pro Spieler: rl/<UID> = { t: Zeit der letzten Meldung, b: ID dieser Meldung }.
+    // Das Spiel schreibt es im SELBEN Schreibvorgang (Batch) wie die Bug-Meldung.
+    // Neu setzen geht nur, wenn die letzte Meldung mehr als 60 Sekunden her ist
+    // → höchstens 1 Bug pro Minute und Spieler. Lesen/Löschen: niemand (Konsole geht immer).
+    match /rl/{uid} {
+      allow create, update: if signedIn()
+        && uid == request.auth.uid
+        && request.resource.data.keys().hasAll(['t', 'b'])
+        && request.resource.data.keys().hasOnly(['t', 'b'])
+        && request.resource.data.t == request.time
+        && str(request.resource.data.b, 40)
+        && (resource == null || request.time > resource.data.t + duration.value(60, 's'));
+      allow read, delete: if false;
+    }
+
     // ---------- Bug-Meldungen ("Bug melden" im Spiel) ----------
     // Spieler dürfen NUR neue Meldungen anlegen – nicht lesen, nicht ändern, nicht löschen.
     // Jedes Feld wird geprüft. x/y/z/fps MÜSSEN Zahlen sein, sonst könnte jemand
@@ -58,12 +81,12 @@ service cloud.firestore {
       return d.keys().hasAll(['text', 'x', 'y', 'z', 'zone', 'name', 'dev', 'q', 'fps', 'ua', 'v', 'err', 'uid', 'ts'])
         && d.keys().hasOnly(['text', 'x', 'y', 'z', 'zone', 'name', 'dev', 'q', 'fps', 'ua', 'v', 'err', 'uid', 'ts'])
         && str(d.text, 2000) && d.text.size() > 0
-        && d.x is number && d.y is number && d.z is number
+        && num(d.x, 100000) && num(d.y, 100000) && num(d.z, 100000)
         && str(d.zone, 32)
         && str(d.name, 24)
         && d.dev in ['Mobile', 'PC']
         && d.q in ['ultra', 'high', 'mid', 'low']
-        && d.fps is number
+        && num(d.fps, 1000)
         && str(d.ua, 160)
         && str(d.v, 8)
         && str(d.err, 600)
@@ -71,16 +94,26 @@ service cloud.firestore {
         && d.ts == request.time;          // Zeit kommt vom Server (serverTimestamp)
     }
 
+    // Die Bremse rl/<UID> muss im selben Batch auf "jetzt" gesetzt werden UND die ID
+    // genau dieser Meldung enthalten. Dadurch geht pro Batch nur EINE Meldung durch.
+    function bugRateOk(bugId) {
+      return getAfter(/databases/$(database)/documents/rl/$(request.auth.uid)).data.t == request.time
+        && getAfter(/databases/$(database)/documents/rl/$(request.auth.uid)).data.b == bugId;
+    }
+
     match /bugs/{bugId} {
-      allow create: if signedIn() && validBug(request.resource.data);
+      // ID = automatische Firestore-ID (20 Zeichen). So kann niemand IDs wie "L…" erzwingen,
+      // die der Bug-Tracker für lokale Meldungen hält und dann nicht löschen könnte.
+      allow create: if signedIn() && bugId.matches('^[A-Za-z0-9]{20}$')
+        && validBug(request.resource.data) && bugRateOk(bugId);
       allow get, list: if isAdmin();     // Bug-Tracker in der Admin-Zentrale
       allow delete: if isAdmin();        // ✕-Knopf im Bug-Tracker
       allow update: if false;            // Meldungen kann niemand nachträglich ändern
     }
 
     // ---------- Live-Telemetrie (alle 60 s ein kleines Lebenszeichen pro Spieler) ----------
-    // Dokument-ID = zufällige Sitzungs-ID aus dem Spiel (nur Kleinbuchstaben/Ziffern, max. 12 Zeichen).
-    // Anlegen darf jeder angemeldete Spieler, ändern nur der, dem das Dokument gehört (gleiche UID).
+    // Dokument-ID = UID des Spielers → jeder Spieler hat genau EIN Dokument.
+    // Anlegen/ändern nur das eigene, ändern höchstens alle 10 Sekunden.
     // fps/x/z MÜSSEN Zahlen sein (werden in der Admin-Zentrale ungefiltert angezeigt).
     function validSession(d) {
       return d.keys().hasAll(['name', 'dev', 'q', 'fps', 'x', 'z', 'v', 'uid', 'ts'])
@@ -88,7 +121,7 @@ service cloud.firestore {
         && str(d.name, 24)
         && d.dev in ['Mobile', 'PC']
         && d.q in ['ultra', 'high', 'mid', 'low']
-        && d.fps is number && d.x is number && d.z is number
+        && num(d.fps, 1000) && num(d.x, 100000) && num(d.z, 100000)
         && str(d.v, 8)
         && d.uid == request.auth.uid
         && d.ts == request.time;
@@ -96,10 +129,12 @@ service cloud.firestore {
 
     match /sessions/{sid} {
       allow create: if signedIn()
-        && sid.matches('^[a-z0-9]{1,12}$')
+        && sid == request.auth.uid
         && validSession(request.resource.data);
       allow update: if signedIn()
-        && resource.data.uid == request.auth.uid   // nur das eigene Dokument
+        && sid == request.auth.uid
+        && resource.data.uid == request.auth.uid
+        && request.time > resource.data.ts + duration.value(10, 's')
         && validSession(request.resource.data);
       allow get, list: if isAdmin();               // Telemetrie-Tab
       allow delete: if false;                      // Aufräumen: TTL-Regel oder Konsole

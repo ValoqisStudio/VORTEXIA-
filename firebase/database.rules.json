@@ -4,6 +4,15 @@
 //  (Kommentare mit // sind in diesen Regeln erlaubt.)
 //
 //  Grundsatz: ALLES ist verboten, außer es steht hier ausdrücklich erlaubt.
+//
+//  Admin (kommt unten mehrmals vor) = mit Google angemeldet (nicht anonym) UND
+//    Custom Claim admin = true  ODER  Eintrag  admins/<deine UID> = true.
+//
+//  Bremse gegen Spam ("rl" = rate limit):
+//    Jeder Spieler hat unter rooms/main/rl/<UID> ein paar Zeitstempel.
+//    Wer eine Position oder ein Ereignis schreibt, MUSS im SELBEN Schreibvorgang
+//    seinen Zeitstempel auf "jetzt" (Serverzeit) setzen – und das geht nur,
+//    wenn der letzte lange genug her ist. So kann niemand die Datenbank fluten.
 // =====================================================================
 {
   "rules": {
@@ -11,8 +20,8 @@
     ".write": false,
 
     // ---------- Admin-Liste ----------
-    // Schlüssel = deine UID, Wert = true. Legst du NUR in der Konsole an (Daten-Tab).
-    // Das Spiel darf hier weder lesen noch schreiben.
+    // Schlüssel = deine UID, Wert = true (genau true, nicht "true" und nicht false).
+    // Legst du NUR in der Konsole an (Daten-Tab). Das Spiel darf hier weder lesen noch schreiben.
     "admins": {
       ".read": false,
       ".write": false
@@ -22,13 +31,17 @@
       "main": {
 
         // ---------- Spieler-Positionen (10x pro Sekunde) ----------
-        // Jeder angemeldete Spieler darf alle lesen, aber NUR seinen eigenen Eintrag
-        // (Schlüssel = seine UID) schreiben oder löschen (auch beim Verlassen/Verbindungsabbruch).
+        // Lesen: alle angemeldeten Spieler.
+        // Schreiben: nur den EIGENEN Eintrag (Schlüssel = eigene UID), immer mit ts = Serverzeit
+        //   und zusammen mit rl/<UID>/p (höchstens alle 40 ms, das Spiel sendet alle 100 ms).
+        // Löschen: der Spieler selbst (Verlassen/Verbindungsabbruch),
+        //   JEDER, wenn der Eintrag seit 2 Minuten kein Lebenszeichen hat (Geister aufräumen),
+        //   und ein Admin immer.
         "p": {
           ".read": "auth != null",
           "$uid": {
-            ".write": "auth != null && auth.uid === $uid",
-            ".validate": "newData.hasChildren(['n','x','y','z','h','v','a','w','p','hp','j','c','k','dd'])",
+            ".write": "auth != null && (auth.uid === $uid || (!newData.exists() && (!data.child('ts').exists() || data.child('ts').val() < now - 120000 || (auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)))))",
+            ".validate": "newData.hasChildren(['n','x','y','z','h','v','a','w','p','hp','j','c','k','dd','ts']) && newData.child('ts').val() === now && newData.parent().parent().child('rl/' + $uid + '/p').val() === now && root.child('rooms/main/rl/' + $uid + '/p').val() !== now",
             // Name: Text, höchstens 24 Zeichen
             "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
             // Position, Blickrichtung, Tempo, Kamera-Neigung: Zahlen
@@ -42,11 +55,13 @@
             "a": { ".validate": "newData.val() === 0 || newData.val() === 1" },
             "j": { ".validate": "newData.val() === 0 || newData.val() === 1" },
             "dd": { ".validate": "newData.val() === 0 || newData.val() === 1" },
-            // w = Waffe 0-3, hp = Leben 0-100, c = Figur 0-2, k = Auto-Farbe 0-10 (0 = zu Fuß)
-            "w": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+            // w = Waffe 0-3 (ganze Zahl), hp = Leben 0-100, c = Figur 0-2, k = Auto-Farbe 0-10 (0 = zu Fuß)
+            "w": { ".validate": "newData.val() === 0 || newData.val() === 1 || newData.val() === 2 || newData.val() === 3" },
             "hp": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
             "c": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2" },
             "k": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10" },
+            // ts = Lebenszeichen, MUSS die Serverzeit sein (ServerValue.TIMESTAMP)
+            "ts": { ".validate": "newData.val() === now" },
             // Andere Felder: verboten
             "$other": { ".validate": false }
           }
@@ -54,39 +69,88 @@
 
         // ---------- Ereignisse: s = Schuss, h = Treffer, d = ausgeschaltet ----------
         // Nur diese drei Arten. f muss die eigene UID sein, t die Serverzeit.
+        // Pro Schreibvorgang genau EIN Ereignis: sein Schlüssel muss in rl/<UID>/e stehen,
+        // und rl/<UID>/<Art> muss im selben Schreibvorgang auf "jetzt" gesetzt werden (Bremse, siehe "rl").
+        // Wer schießt/trifft, muss selbst im Raum sein (Eintrag in p) und darf nicht ausgeschaltet sein.
         // Durchsagen (k = "m") von Spielern sind VERBOTEN – die könnten sonst HTML einschleusen.
-        // Löschen: das eigene Ereignis, oder jedes Ereignis, das älter als 1 Minute ist (Aufräumen).
+        // Löschen: das eigene Ereignis, jedes Ereignis älter als 1 Minute (Aufräumen), Admin alles.
         "e": {
           ".read": "auth != null",
           ".indexOn": ["t"],
           "$eid": {
-            ".write": "auth != null && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && (data.child('f').val() === auth.uid || data.child('t').val() < now - 60000)))",
-            ".validate": "newData.hasChildren(['f','t','k']) && ((newData.child('k').val() === 's' && newData.hasChildren(['a','w'])) || (newData.child('k').val() === 'h' && newData.hasChildren(['to','d'])) || (newData.child('k').val() === 'd' && newData.hasChild('by')))",
+            ".write": "auth != null && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && (data.child('f').val() === auth.uid || data.child('t').val() < now - 60000 || (auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)))))",
+            ".validate": "newData.hasChildren(['f','t','k']) && $eid === newData.parent().parent().child('rl/' + auth.uid + '/e').val() && newData.parent().parent().child('rl/' + auth.uid + '/' + newData.child('k').val()).val() === now && root.child('rooms/main/rl/' + auth.uid + '/' + newData.child('k').val()).val() !== now && root.child('rooms/main/p/' + auth.uid).exists() && (newData.child('k').val() === 'd' || root.child('rooms/main/p/' + auth.uid + '/dd').val() === 0) && ((newData.child('k').val() === 's' && newData.hasChildren(['a','w'])) || (newData.child('k').val() === 'h' && newData.hasChildren(['to','d'])) || (newData.child('k').val() === 'd' && newData.hasChild('by')))",
             "f": { ".validate": "newData.val() === auth.uid" },
             "t": { ".validate": "newData.val() === now" },
             "k": { ".validate": "newData.val() === 's' || newData.val() === 'h' || newData.val() === 'd'" },
-            // Schuss: a = 6 Zahlen (Mündung x,y,z + Einschlag x,y,z), w = Waffe 0-3
+            // Schuss: a = 6 Zahlen (Mündung x,y,z + Einschlag x,y,z), w = Waffe 0-3.
+            // Die Mündung muss höchstens 15 m neben der eigenen Position (aus p) sein,
+            // der Einschlag höchstens 200 m von der Mündung (Scharfschützengewehr: 170 m).
             "a": {
-              ".validate": "newData.parent().child('k').val() === 's' && newData.hasChildren(['0','1','2','3','4','5'])",
+              ".validate": "newData.parent().child('k').val() === 's' && newData.hasChildren(['0','1','2','3','4','5']) && (newData.child('0').val() - root.child('rooms/main/p/' + auth.uid + '/x').val()) * (newData.child('0').val() - root.child('rooms/main/p/' + auth.uid + '/x').val()) + (newData.child('2').val() - root.child('rooms/main/p/' + auth.uid + '/z').val()) * (newData.child('2').val() - root.child('rooms/main/p/' + auth.uid + '/z').val()) <= 225 && (newData.child('3').val() - newData.child('0').val()) * (newData.child('3').val() - newData.child('0').val()) + (newData.child('5').val() - newData.child('2').val()) * (newData.child('5').val() - newData.child('2').val()) <= 40000",
               "$i": { ".validate": "$i.matches(/^[0-5]$/) && newData.isNumber()" }
             },
             "w": { ".validate": "newData.parent().child('k').val() === 's' && newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
-            // Treffer: to = UID des Getroffenen, d = Schaden (stärkste Waffe macht 41, erlaubt bis 50)
-            "to": { ".validate": "newData.parent().child('k').val() === 'h' && newData.isString() && newData.val().length <= 128" },
-            "d": { ".validate": "newData.parent().child('k').val() === 'h' && newData.isNumber() && newData.val() >= 0 && newData.val() <= 50" },
+            // Treffer: to = UID des Getroffenen. Nicht man selbst, muss im Raum sein und darf nicht ausgeschaltet sein.
+            // Abstand Schütze–Opfer (aus p) höchstens Reichweite der Waffe + 15 m:
+            //   Pistole (w 0) 105 m, MP (w 1) 85 m, Schrotflinte (w 2) 50 m, Scharfschützengewehr (w 3) 185 m.
+            "to": { ".validate": "newData.parent().child('k').val() === 'h' && newData.isString() && newData.val().matches(/^[A-Za-z0-9]{1,128}$/) && newData.val() !== auth.uid && root.child('rooms/main/p/' + newData.val() + '/dd').val() === 0 && (root.child('rooms/main/p/' + auth.uid + '/x').val() - root.child('rooms/main/p/' + newData.val() + '/x').val()) * (root.child('rooms/main/p/' + auth.uid + '/x').val() - root.child('rooms/main/p/' + newData.val() + '/x').val()) + (root.child('rooms/main/p/' + auth.uid + '/z').val() - root.child('rooms/main/p/' + newData.val() + '/z').val()) * (root.child('rooms/main/p/' + auth.uid + '/z').val() - root.child('rooms/main/p/' + newData.val() + '/z').val()) <= (root.child('rooms/main/p/' + auth.uid + '/w').val() === 0 ? 11025 : root.child('rooms/main/p/' + auth.uid + '/w').val() === 1 ? 7225 : root.child('rooms/main/p/' + auth.uid + '/w').val() === 2 ? 2500 : 34225)" },
+            // d = Schaden pro Schuss, höchstens so viel wie die Waffe (aus p) wirklich macht:
+            //   Pistole 12, MP 8, Schrotflinte 58 (alle 8 Kugeln zusammen), Scharfschützengewehr 41.
+            //   (Wenn du im Spiel WEAPONS.dmg änderst: diese Zahlen anpassen! Schaden = dmg x 12.)
+            "d": { ".validate": "newData.parent().child('k').val() === 'h' && newData.isNumber() && newData.val() >= 0 && newData.val() <= (root.child('rooms/main/p/' + auth.uid + '/w').val() === 0 ? 12 : root.child('rooms/main/p/' + auth.uid + '/w').val() === 1 ? 8 : root.child('rooms/main/p/' + auth.uid + '/w').val() === 2 ? 58 : 41)" },
             // Ausgeschaltet: by = Name des Gegners (darf leer sein), höchstens 40 Zeichen
             "by": { ".validate": "newData.parent().child('k').val() === 'd' && newData.isString() && newData.val().length <= 40" },
             "$other": { ".validate": false }
           }
         },
 
+        // ---------- Bremse (rate limit) pro Spieler ----------
+        // Niemand darf lesen. Schreiben nur der Spieler selbst, und nur Zeitstempel = Serverzeit.
+        // Löschen darf der Spieler NICHT (sonst könnte er die Bremse zurücksetzen) – nur ein Admin.
+        //   s = letzter Schuss    → mindestens 30 ms Abstand (MP schießt höchstens alle 75 ms)
+        //   h = letzter Treffer   → Abstand je nach Waffe (aus p): Pistole 80 ms, MP 30 ms,
+        //                           Schrotflinte 200 ms, Scharfschützengewehr 200 ms.
+        //                           (Echte Abstände: 170 / 75 / 750 / 1050 ms. Waffenwechsel dauert
+        //                           250 ms, darum nie mehr als 200 – sonst ginge nach dem Wechsel ein Treffer verloren.)
+        //                           Zusammen mit dem Schaden-Limit kann ein Betrüger höchstens ~290 Schaden
+        //                           pro Sekunde machen – und nur, wenn er wirklich in der Nähe steht.
+        //   d = ausgeschaltet     → mindestens 2 s Abstand (Wiederbeleben dauert 3,6 s)
+        //   p = letzte Position   → mindestens 40 ms Abstand (das Spiel sendet alle 100 ms)
+        //   e = Schlüssel des Ereignisses aus demselben Schreibvorgang
+        "rl": {
+          ".write": "auth != null && !newData.exists() && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+          "$uid": {
+            ".write": "auth != null && !newData.exists() && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+            "s": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists()",
+              ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 30)"
+            },
+            "h": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists()",
+              ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= (root.child('rooms/main/p/' + $uid + '/w').val() === 0 ? 80 : root.child('rooms/main/p/' + $uid + '/w').val() === 1 ? 30 : 200))"
+            },
+            "d": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists()",
+              ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 2000)"
+            },
+            "p": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists()",
+              ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 40)"
+            },
+            "e": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists()",
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "$other": { ".validate": false }
+          }
+        },
+
         // ---------- Weltzustand (Wetter, Uhrzeit, Himmelstext, Durchsagen, Feuerwerk ...) ----------
-        // Lesen: alle angemeldeten Spieler.
-        // Schreiben: NUR Admins = mit Google angemeldet (nicht anonym) UND
-        //   Custom Claim admin = true  ODER  Eintrag unter /admins/<deine UID>.
+        // Lesen: alle angemeldeten Spieler. Schreiben: NUR Admins.
         "w": {
           ".read": "auth != null",
-          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).exists())",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
           "wx": { ".validate": "newData.isString() && newData.val().matches(/^(clear|cloudy|rain|storm|snow|fog)$/)" },
           "tm": { ".validate": "newData.isString() && newData.val().matches(/^(morning|day|dusk|night|midnight)$/)" },
           "auto": { ".validate": "newData.isBoolean()" },

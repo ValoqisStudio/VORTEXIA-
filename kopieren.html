@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#06070e">
+<link rel="icon" href="data:,">
 <meta name="robots" content="noindex">
 <meta name="description" content="Komplette VORTEXIA-HTML und Firebase-Regeln mit einem Tipp kopieren oder herunterladen.">
 <title>VORTEXIA – HTML kopieren</title>
@@ -105,9 +106,9 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
 </header>
 
 <section class="howto" aria-labelledby="howto-h">
-  <h2 id="howto-h">So geht's</h2>
+  <h2 id="howto-h">So geht’s</h2>
   <ol>
-    <li>Warte, bis bei der Datei <b>„Bereit"</b> steht, und tippe dann auf <b>Kopieren</b>.</li>
+    <li>Warte, bis bei der Datei <b>„Bereit“</b> steht, und tippe dann auf <b>Kopieren</b>.</li>
     <li><b>Spiel (Firebase Hosting):</b> In deinem Projekt den ganzen Inhalt von <code>public/index.html</code> löschen, den kopierten Text einfügen, speichern und <code>firebase deploy</code> ausführen.</li>
     <li><b>Regeln:</b> Firebase-Konsole → <i>Firestore Database</i> bzw. <i>Realtime Database</i> → Tab <i>Regeln</i> → alles löschen, einfügen, <b>Veröffentlichen</b>.</li>
     <li><b>firebase.json</b> kommt in den Hauptordner deines Firebase-Projekts (neben den Ordner <code>public</code>).</li>
@@ -125,10 +126,10 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
   </div>
   <p class="desc">Normale Version – wählt die Grafik automatisch passend zum Gerät.</p>
   <div class="bar" data-bar><i></i></div>
-  <p class="status" data-status role="status" aria-live="polite">Wartet…</p>
+  <p class="status" data-status><span data-live role="status" aria-live="polite" aria-atomic="true">Wartet…</span><span data-prog aria-hidden="true"></span></p>
   <div class="actions">
-    <button type="button" class="btn primary" data-copy>Kopieren</button>
-    <button type="button" class="btn" data-dl>Herunterladen</button>
+    <button type="button" class="btn primary" data-copy aria-label="index.html kopieren">Kopieren</button>
+    <button type="button" class="btn" data-dl aria-label="index.html herunterladen">Herunterladen</button>
   </div>
 </article>
 
@@ -139,10 +140,10 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
   </div>
   <p class="desc">Ultra-Version – startet immer mit maximaler Grafik.</p>
   <div class="bar" data-bar><i></i></div>
-  <p class="status" data-status role="status" aria-live="polite">Wartet…</p>
+  <p class="status" data-status><span data-live role="status" aria-live="polite" aria-atomic="true">Wartet…</span><span data-prog aria-hidden="true"></span></p>
   <div class="actions">
-    <button type="button" class="btn primary" data-copy>Kopieren</button>
-    <button type="button" class="btn" data-dl>Herunterladen</button>
+    <button type="button" class="btn primary" data-copy aria-label="Vortexia_ULTRA.html kopieren">Kopieren</button>
+    <button type="button" class="btn" data-dl aria-label="Vortexia_ULTRA.html herunterladen">Herunterladen</button>
   </div>
 </article>
 
@@ -155,10 +156,10 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
   </div>
   <p class="desc">Konsole → Firestore Database → Regeln → einfügen → Veröffentlichen.</p>
   <div class="bar" data-bar><i></i></div>
-  <p class="status" data-status role="status" aria-live="polite">Wartet…</p>
+  <p class="status" data-status><span data-live role="status" aria-live="polite" aria-atomic="true">Wartet…</span><span data-prog aria-hidden="true"></span></p>
   <div class="actions">
-    <button type="button" class="btn primary" data-copy>Kopieren</button>
-    <button type="button" class="btn" data-dl>Herunterladen</button>
+    <button type="button" class="btn primary" data-copy aria-label="firestore.rules kopieren">Kopieren</button>
+    <button type="button" class="btn" data-dl aria-label="firestore.rules herunterladen">Herunterladen</button>
   </div>
   <pre class="rules" data-pre tabindex="0" aria-label="Firestore-Regeln">Lädt…</pre>
 </article>
@@ -170,10 +171,10 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
   </div>
   <p class="desc">Konsole → Realtime Database → Regeln → einfügen → Veröffentlichen.</p>
   <div class="bar" data-bar><i></i></div>
-  <p class="status" data-status role="status" aria-live="polite">Wartet…</p>
+  <p class="status" data-status><span data-live role="status" aria-live="polite" aria-atomic="true">Wartet…</span><span data-prog aria-hidden="true"></span></p>
   <div class="actions">
-    <button type="button" class="btn primary" data-copy>Kopieren</button>
-    <button type="button" class="btn" data-dl>Herunterladen</button>
+    <button type="button" class="btn primary" data-copy aria-label="database.rules.json kopieren">Kopieren</button>
+    <button type="button" class="btn" data-dl aria-label="database.rules.json herunterladen">Herunterladen</button>
   </div>
   <pre class="rules" data-pre tabindex="0" aria-label="Realtime-Database-Regeln">Lädt…</pre>
 </article>
@@ -185,10 +186,10 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
   </div>
   <p class="desc">Projekt-Einstellungen für Hosting und Regeln – kommt in den Hauptordner des Projekts.</p>
   <div class="bar" data-bar><i></i></div>
-  <p class="status" data-status role="status" aria-live="polite">Wartet…</p>
+  <p class="status" data-status><span data-live role="status" aria-live="polite" aria-atomic="true">Wartet…</span><span data-prog aria-hidden="true"></span></p>
   <div class="actions">
-    <button type="button" class="btn primary" data-copy>Kopieren</button>
-    <button type="button" class="btn" data-dl>Herunterladen</button>
+    <button type="button" class="btn primary" data-copy aria-label="firebase.json kopieren">Kopieren</button>
+    <button type="button" class="btn" data-dl aria-label="firebase.json herunterladen">Herunterladen</button>
   </div>
   <pre class="rules" data-pre tabindex="0" aria-label="firebase.json">Lädt…</pre>
 </article>
@@ -222,6 +223,8 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
       big: el.hasAttribute('data-big'),
       sizeEl: el.querySelector('[data-size]'),
       statusEl: el.querySelector('[data-status]'),
+      liveEl: el.querySelector('[data-live]'),
+      progEl: el.querySelector('[data-prog]'),
       barEl: el.querySelector('[data-bar]'),
       copyBtn: el.querySelector('[data-copy]'),
       dlBtn: el.querySelector('[data-dl]'),
@@ -235,17 +238,33 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
     };
   });
 
+  // Screenreader-Ansage (aria-live) nur bei Start / Fertig / Fehler.
+  // Der laufende Fortschritt geht über setProgress und wird NICHT angesagt.
   function setStatus(c, kind, msg, hint) {
     c.statusEl.className = 'status' + (kind ? ' ' + kind : '');
-    c.statusEl.textContent = msg;
+    c.progEl.textContent = '';
+    var live = c.liveEl;
+    live.classList.remove('sr');
+    live.textContent = '';
+    var who = document.createElement('span');
+    who.className = 'sr';
+    who.textContent = c.name + ': ';
+    live.appendChild(who);
+    live.appendChild(document.createTextNode(msg));
     if (hint) {
       var s = document.createElement('span');
       s.className = 'hint';
       s.textContent = hint;
-      c.statusEl.appendChild(s);
+      live.appendChild(s);
     }
     c.el.classList.toggle('is-ok', kind === 'ok');
     c.el.classList.toggle('is-err', kind === 'err');
+  }
+
+  // Nur sichtbar (aria-hidden): die Ansage bleibt unverändert, also kein Dauer-Vorlesen.
+  function setProgress(c, text) {
+    c.liveEl.classList.add('sr');
+    c.progEl.textContent = text;
   }
 
   function setBar(c, mode, pct) {
@@ -265,8 +284,12 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
     setStatus(c, 'busy', 'Lädt…');
     setBar(c, c.big ? '' : 'indet', 0);
 
-    c.promise = fetch(c.src, { cache: 'no-store' }).then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status + (res.status === 404 ? ' – Datei nicht gefunden' : ''));
+    c.promise = fetch(c.src, { cache: 'no-cache' }).then(function (res) {
+      if (!res.ok) {
+        var httpErr = new Error('HTTP ' + res.status);
+        httpErr.status = res.status;
+        throw httpErr;
+      }
       var enc = res.headers.get('content-encoding');
       var len = parseInt(res.headers.get('content-length') || '', 10);
       var total = (!enc || enc === 'identity') && len > 0 ? len : 0;
@@ -299,9 +322,9 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
             lastPaint = now;
             if (total) {
               setBar(c, '', loaded / total * 100);
-              setStatus(c, 'busy', 'Lädt… ' + fmtSize(loaded) + ' von ' + fmtSize(total));
+              setProgress(c, 'Lädt… ' + fmtSize(loaded) + ' von ' + fmtSize(total));
             } else {
-              setStatus(c, 'busy', 'Lädt… ' + fmtSize(loaded));
+              setProgress(c, 'Lädt… ' + fmtSize(loaded));
             }
             c.sizeEl.textContent = fmtSize(loaded);
           }
@@ -317,11 +340,11 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
       setBar(c, 'done');
       if (c.preEl) c.preEl.textContent = text;
       if (c.retapCopy) {
-        setStatus(c, 'busy', 'Fertig geladen – tippe jetzt nochmal auf „Kopieren"');
+        setStatus(c, 'busy', 'Fertig geladen – tippe jetzt nochmal auf „Kopieren“');
       } else if (c.retapDl) {
-        setStatus(c, 'busy', 'Fertig geladen – tippe jetzt nochmal auf „Herunterladen"');
+        setStatus(c, 'busy', 'Fertig geladen – tippe jetzt nochmal auf „Herunterladen“');
       } else {
-        setStatus(c, '', 'Bereit – tippe auf „Kopieren"');
+        setStatus(c, '', 'Bereit – tippe auf „Kopieren“');
       }
       c.retapCopy = c.retapDl = false;
       return c;
@@ -332,8 +355,13 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
       c.sizeEl.textContent = '–';
       setBar(c, 'fail');
       if (c.preEl) c.preEl.textContent = 'Konnte nicht geladen werden.';
-      setStatus(c, 'err', 'Fehler beim Laden (' + (err && err.message ? err.message : 'Netzwerk') + ').',
-        'Prüfe deine Internetverbindung und tippe auf „Kopieren", um es nochmal zu versuchen.');
+      if (err && err.status === 404) {
+        setStatus(c, 'err', 'Fehler beim Laden (HTTP 404).',
+          'Datei fehlt auf dem Server: „' + c.src + '“ muss erst dort hochgeladen werden.');
+      } else {
+        setStatus(c, 'err', 'Fehler beim Laden (' + (err && err.message ? err.message : 'Netzwerk') + ').',
+          'Prüfe deine Internetverbindung und tippe auf „Kopieren“, um es nochmal zu versuchen.');
+      }
       throw err;
     });
     return c.promise;
@@ -383,21 +411,23 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
 
   function copied(c) {
     setStatus(c, 'ok', 'Kopiert ✓ (' + fmtSize(c.bytes) + ')',
-      c.big ? 'Jetzt in Firebase einfügen. Wird nichts oder nur ein Teil eingefügt: „Herunterladen" nehmen.' :
+      c.big ? 'Jetzt in Firebase einfügen. Wird nichts oder nur ein Teil eingefügt: „Herunterladen“ nehmen.' :
               'Jetzt in der Firebase-Konsole einfügen.');
     c.copyBtn.classList.add('done');
     c.copyBtn.textContent = 'Kopiert ✓';
+    c.copyBtn.setAttribute('aria-label', c.name + ' kopiert');
     clearTimeout(c.btnTimer);
     c.btnTimer = setTimeout(function () {
       c.copyBtn.classList.remove('done');
       c.copyBtn.textContent = 'Kopieren';
+      c.copyBtn.setAttribute('aria-label', c.name + ' kopieren');
     }, 2500);
   }
 
   function copyFailed(c) {
     setStatus(c, 'err', 'Fehler: Der Browser hat das Kopieren abgelehnt' +
       (c.big ? ' – die Datei ist wahrscheinlich zu groß für die Zwischenablage.' : '.'),
-      'Tipp: Tippe auf „Herunterladen" und lade die Datei stattdessen hoch.');
+      'Tipp: Tippe auf „Herunterladen“ und lade die Datei stattdessen hoch.');
   }
 
   // Muss synchron im Tipp passieren (sonst blockt iOS Safari).
@@ -448,15 +478,15 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
       }, function () {
         if (c.error) return;
         if (c.text !== null) {
-          setStatus(c, 'busy', 'Fertig geladen – tippe jetzt nochmal auf „Kopieren"');
+          setStatus(c, 'busy', 'Fertig geladen – tippe jetzt nochmal auf „Kopieren“');
         } else {
           c.retapCopy = true;
-          setStatus(c, 'busy', 'Wird geladen… dann nochmal auf „Kopieren" tippen.');
+          setStatus(c, 'busy', 'Wird geladen… dann nochmal auf „Kopieren“ tippen.');
         }
       });
     } else {
       c.retapCopy = true;
-      setStatus(c, 'busy', 'Wird geladen… dann nochmal auf „Kopieren" tippen.');
+      setStatus(c, 'busy', 'Wird geladen… dann nochmal auf „Kopieren“ tippen.');
     }
   }
 
@@ -475,7 +505,7 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
     setStatus(c, 'ok', 'Download gestartet ✓ (' + fmtSize(c.bytes) + ')',
-      'Die Datei „' + c.name + '" liegt danach in „Downloads" bzw. in der Dateien-App.');
+      'Die Datei „' + c.name + '“ liegt danach in „Downloads“ bzw. in der Dateien-App.');
   }
 
   function onDownload(c) {
@@ -484,7 +514,7 @@ footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
       return;
     }
     c.retapDl = true;
-    setStatus(c, 'busy', 'Wird geladen… dann nochmal auf „Herunterladen" tippen.');
+    setStatus(c, 'busy', 'Wird geladen… dann nochmal auf „Herunterladen“ tippen.');
     load(c).catch(function () {});
   }
 
