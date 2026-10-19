@@ -20,6 +20,8 @@ Die Dateien sind je ca. 20 MB groß, weil 3D-Engine, Modelle und Stimmen eingebe
 
 ## Direkt im Browser spielen
 
+- **Firebase (eigene Seite):** https://vortexia-703d8.web.app/ · Ultra: https://vortexia-703d8.web.app/Vortexia_ULTRA.html
+
 - Normal: https://valoqisstudio.github.io/VORTEXIA-/
 - Ultra: https://valoqisstudio.github.io/VORTEXIA-/Vortexia_ULTRA.html
 
