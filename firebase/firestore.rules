@@ -1,0 +1,113 @@
+rules_version = '2';
+
+// =====================================================================
+//  VORTEXIA – Cloud Firestore Sicherheitsregeln
+//  Einfügen in: Firebase-Konsole → Firestore Database → Regeln → Veröffentlichen
+//
+//  Grundsatz: ALLES ist verboten, außer es steht hier ausdrücklich erlaubt.
+//  Spieler sind anonym angemeldet (passiert im Spiel automatisch).
+//  Admin bist nur du – und das entscheidet NUR der Server, nie das Spiel.
+// =====================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Hilfsfunktionen ----------
+
+    // Irgendwie angemeldet (anonym oder Google)
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Admin = mit Google angemeldet (nicht anonym) UND
+    //   a) hat den Custom Claim  admin: true   (für Fortgeschrittene)
+    //   ODER
+    //   b) es gibt ein Dokument  admins/<deine UID>  (legst du von Hand in der Konsole an).
+    // Kein Spieler kann sich selbst eintragen – die Sammlung "admins" ist für das Spiel gesperrt.
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && (request.auth.token.get('admin', false) == true
+            || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    // Text-Feld: muss ein String sein und darf höchstens max Zeichen haben
+    function str(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    // ---------- Admin-Ausweis für das Spiel ----------
+    // Das Spiel liest meta/admin. Klappt das Lesen, zeigt es dir die Admin-Zentrale.
+    // Deshalb darf NUR ein Admin lesen. Das Dokument muss gar nicht existieren.
+    match /meta/admin {
+      allow get: if isAdmin();
+      allow list, write: if false;
+    }
+
+    // ---------- Admin-Liste ----------
+    // Hier stehen die UIDs der Admins (Dokument-ID = UID, Inhalt egal).
+    // Nur in der Firebase-Konsole bearbeitbar – aus dem Spiel heraus komplett gesperrt.
+    match /admins/{uid} {
+      allow read, write: if false;
+    }
+
+    // ---------- Bug-Meldungen ("Bug melden" im Spiel) ----------
+    // Spieler dürfen NUR neue Meldungen anlegen – nicht lesen, nicht ändern, nicht löschen.
+    // Jedes Feld wird geprüft. x/y/z/fps MÜSSEN Zahlen sein, sonst könnte jemand
+    // HTML-Code in deinen Bug-Tracker schmuggeln (der zeigt diese Felder ungefiltert an).
+    function validBug(d) {
+      return d.keys().hasAll(['text', 'x', 'y', 'z', 'zone', 'name', 'dev', 'q', 'fps', 'ua', 'v', 'err', 'uid', 'ts'])
+        && d.keys().hasOnly(['text', 'x', 'y', 'z', 'zone', 'name', 'dev', 'q', 'fps', 'ua', 'v', 'err', 'uid', 'ts'])
+        && str(d.text, 2000) && d.text.size() > 0
+        && d.x is number && d.y is number && d.z is number
+        && str(d.zone, 32)
+        && str(d.name, 24)
+        && d.dev in ['Mobile', 'PC']
+        && d.q in ['ultra', 'high', 'mid', 'low']
+        && d.fps is number
+        && str(d.ua, 160)
+        && str(d.v, 8)
+        && str(d.err, 600)
+        && d.uid == request.auth.uid      // nur unter der eigenen UID
+        && d.ts == request.time;          // Zeit kommt vom Server (serverTimestamp)
+    }
+
+    match /bugs/{bugId} {
+      allow create: if signedIn() && validBug(request.resource.data);
+      allow get, list: if isAdmin();     // Bug-Tracker in der Admin-Zentrale
+      allow delete: if isAdmin();        // ✕-Knopf im Bug-Tracker
+      allow update: if false;            // Meldungen kann niemand nachträglich ändern
+    }
+
+    // ---------- Live-Telemetrie (alle 60 s ein kleines Lebenszeichen pro Spieler) ----------
+    // Dokument-ID = zufällige Sitzungs-ID aus dem Spiel (nur Kleinbuchstaben/Ziffern, max. 12 Zeichen).
+    // Anlegen darf jeder angemeldete Spieler, ändern nur der, dem das Dokument gehört (gleiche UID).
+    // fps/x/z MÜSSEN Zahlen sein (werden in der Admin-Zentrale ungefiltert angezeigt).
+    function validSession(d) {
+      return d.keys().hasAll(['name', 'dev', 'q', 'fps', 'x', 'z', 'v', 'uid', 'ts'])
+        && d.keys().hasOnly(['name', 'dev', 'q', 'fps', 'x', 'z', 'v', 'uid', 'ts'])
+        && str(d.name, 24)
+        && d.dev in ['Mobile', 'PC']
+        && d.q in ['ultra', 'high', 'mid', 'low']
+        && d.fps is number && d.x is number && d.z is number
+        && str(d.v, 8)
+        && d.uid == request.auth.uid
+        && d.ts == request.time;
+    }
+
+    match /sessions/{sid} {
+      allow create: if signedIn()
+        && sid.matches('^[a-z0-9]{1,12}$')
+        && validSession(request.resource.data);
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid   // nur das eigene Dokument
+        && validSession(request.resource.data);
+      allow get, list: if isAdmin();               // Telemetrie-Tab
+      allow delete: if false;                      // Aufräumen: TTL-Regel oder Konsole
+    }
+
+    // ---------- Alles andere: verboten ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

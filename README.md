@@ -25,6 +25,15 @@ Die Dateien sind je ca. 20 MB groß, weil 3D-Engine, Modelle und Stimmen eingebe
 
 Die Webseite kommt aus dem Zweig `gh-pages` – Änderungen dort hin pushen (`git push origin main:gh-pages`).
 
+## HTML kopieren (für Firebase)
+
+https://valoqisstudio.github.io/VORTEXIA-/kopieren.html
+
+Auf dieser Seite startet kein Spiel. Ein Tipp auf **Kopieren** legt die komplette HTML (`index.html` oder `Vortexia_ULTRA.html`)
+in die Zwischenablage – zum Einfügen in dein Firebase-Projekt. Die Firebase-Regeln (`firebase/firestore.rules`,
+`firebase/database.rules.json`) und `firebase/firebase.json` kannst du dort genauso kopieren oder herunterladen.
+Ist die Datei für die Zwischenablage zu groß (manche Handys schaffen keine 20 MB), nimm **Herunterladen**.
+
 ## In die eigene Webseite einbauen
 
 Es reicht diese eine Zeile in deiner Webseite:

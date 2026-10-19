@@ -1,0 +1,112 @@
+// =====================================================================
+//  VORTEXIA – Realtime Database Regeln (Online-Modus / Multiplayer)
+//  Einfügen in: Firebase-Konsole → Realtime Database → Regeln → Veröffentlichen
+//  (Kommentare mit // sind in diesen Regeln erlaubt.)
+//
+//  Grundsatz: ALLES ist verboten, außer es steht hier ausdrücklich erlaubt.
+// =====================================================================
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    // ---------- Admin-Liste ----------
+    // Schlüssel = deine UID, Wert = true. Legst du NUR in der Konsole an (Daten-Tab).
+    // Das Spiel darf hier weder lesen noch schreiben.
+    "admins": {
+      ".read": false,
+      ".write": false
+    },
+
+    "rooms": {
+      "main": {
+
+        // ---------- Spieler-Positionen (10x pro Sekunde) ----------
+        // Jeder angemeldete Spieler darf alle lesen, aber NUR seinen eigenen Eintrag
+        // (Schlüssel = seine UID) schreiben oder löschen (auch beim Verlassen/Verbindungsabbruch).
+        "p": {
+          ".read": "auth != null",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.hasChildren(['n','x','y','z','h','v','a','w','p','hp','j','c','k','dd'])",
+            // Name: Text, höchstens 24 Zeichen
+            "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
+            // Position, Blickrichtung, Tempo, Kamera-Neigung: Zahlen
+            "x": { ".validate": "newData.isNumber()" },
+            "y": { ".validate": "newData.isNumber()" },
+            "z": { ".validate": "newData.isNumber()" },
+            "h": { ".validate": "newData.isNumber()" },
+            "v": { ".validate": "newData.isNumber()" },
+            "p": { ".validate": "newData.isNumber()" },
+            // a = Waffe gezogen, j = in der Luft, dd = ausgeschaltet: nur 0 oder 1
+            "a": { ".validate": "newData.val() === 0 || newData.val() === 1" },
+            "j": { ".validate": "newData.val() === 0 || newData.val() === 1" },
+            "dd": { ".validate": "newData.val() === 0 || newData.val() === 1" },
+            // w = Waffe 0-3, hp = Leben 0-100, c = Figur 0-2, k = Auto-Farbe 0-10 (0 = zu Fuß)
+            "w": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+            "hp": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "c": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2" },
+            "k": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10" },
+            // Andere Felder: verboten
+            "$other": { ".validate": false }
+          }
+        },
+
+        // ---------- Ereignisse: s = Schuss, h = Treffer, d = ausgeschaltet ----------
+        // Nur diese drei Arten. f muss die eigene UID sein, t die Serverzeit.
+        // Durchsagen (k = "m") von Spielern sind VERBOTEN – die könnten sonst HTML einschleusen.
+        // Löschen: das eigene Ereignis, oder jedes Ereignis, das älter als 1 Minute ist (Aufräumen).
+        "e": {
+          ".read": "auth != null",
+          ".indexOn": ["t"],
+          "$eid": {
+            ".write": "auth != null && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && (data.child('f').val() === auth.uid || data.child('t').val() < now - 60000)))",
+            ".validate": "newData.hasChildren(['f','t','k']) && ((newData.child('k').val() === 's' && newData.hasChildren(['a','w'])) || (newData.child('k').val() === 'h' && newData.hasChildren(['to','d'])) || (newData.child('k').val() === 'd' && newData.hasChild('by')))",
+            "f": { ".validate": "newData.val() === auth.uid" },
+            "t": { ".validate": "newData.val() === now" },
+            "k": { ".validate": "newData.val() === 's' || newData.val() === 'h' || newData.val() === 'd'" },
+            // Schuss: a = 6 Zahlen (Mündung x,y,z + Einschlag x,y,z), w = Waffe 0-3
+            "a": {
+              ".validate": "newData.parent().child('k').val() === 's' && newData.hasChildren(['0','1','2','3','4','5'])",
+              "$i": { ".validate": "$i.matches(/^[0-5]$/) && newData.isNumber()" }
+            },
+            "w": { ".validate": "newData.parent().child('k').val() === 's' && newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+            // Treffer: to = UID des Getroffenen, d = Schaden (stärkste Waffe macht 41, erlaubt bis 50)
+            "to": { ".validate": "newData.parent().child('k').val() === 'h' && newData.isString() && newData.val().length <= 128" },
+            "d": { ".validate": "newData.parent().child('k').val() === 'h' && newData.isNumber() && newData.val() >= 0 && newData.val() <= 50" },
+            // Ausgeschaltet: by = Name des Gegners (darf leer sein), höchstens 40 Zeichen
+            "by": { ".validate": "newData.parent().child('k').val() === 'd' && newData.isString() && newData.val().length <= 40" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        // ---------- Weltzustand (Wetter, Uhrzeit, Himmelstext, Durchsagen, Feuerwerk ...) ----------
+        // Lesen: alle angemeldeten Spieler.
+        // Schreiben: NUR Admins = mit Google angemeldet (nicht anonym) UND
+        //   Custom Claim admin = true  ODER  Eintrag unter /admins/<deine UID>.
+        "w": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).exists())",
+          "wx": { ".validate": "newData.isString() && newData.val().matches(/^(clear|cloudy|rain|storm|snow|fog)$/)" },
+          "tm": { ".validate": "newData.isString() && newData.val().matches(/^(morning|day|dusk|night|midnight)$/)" },
+          "auto": { ".validate": "newData.isBoolean()" },
+          "wt": { ".validate": "newData.isNumber()" },
+          "holo": { ".validate": "newData.isString() && newData.val().length <= 28" },
+          "sub": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "msg": {
+            ".validate": "newData.hasChildren(['txt','id','at'])",
+            "txt": { ".validate": "newData.isString() && newData.val().length <= 140" },
+            "id": { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "at": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          },
+          "fw": { ".validate": "newData.isNumber()" },
+          "sm": { ".validate": "newData.isNumber()" },
+          "tr": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1" },
+          "pd": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}
