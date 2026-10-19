@@ -157,7 +157,8 @@ body.touch #hpw{bottom:auto;top:calc(128px + var(--sat));width:112px}
 .ai-msg.a{align-self:flex-start;background:#ffffff0a;border:1px solid #ffffff1c}
 .ai-msg .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.ai-msg .acts span{font:600 11px var(--ui);padding:3px 8px;background:#ffd23c1c;border:1px solid #ffd23c55;color:var(--gold);border-radius:2px}
 .ai-ex{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.ai-ex button{margin:0;padding:6px 10px;font-size:12px;border-radius:2px;background:#ffffff0a;border-color:#ffffff22}
-.ai-in{display:flex;gap:8px;align-items:stretch}.ai-in textarea{flex:1;height:auto;min-height:52px;margin:0;resize:vertical;border-radius:3px}.ai-in button{margin:0;padding:0 22px;background:var(--ac);color:#021018;border:0;font-weight:700;letter-spacing:.08em;border-radius:3px}
+.ai-in{display:flex;gap:8px;align-items:stretch}
+#aisay{background:#ffd23c!important;padding:0 14px!important}@media (max-width:560px){.ai-in{flex-wrap:wrap}.ai-in textarea{flex:1 1 100%}.ai-in button{flex:1;min-height:42px}}.ai-in textarea{flex:1;height:auto;min-height:52px;margin:0;resize:vertical;border-radius:3px}.ai-in button{margin:0;padding:0 22px;background:var(--ac);color:#021018;border:0;font-weight:700;letter-spacing:.08em;border-radius:3px}
 .wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .wcard{background:#ffffff08;border:1px solid #ffffff1a;border-radius:3px;padding:12px 14px;display:grid;gap:8px;align-content:start;min-width:0}
 .wcard h3{margin:0;font:600 11px var(--ui);letter-spacing:.24em;text-transform:uppercase;color:var(--ac)}
@@ -349,7 +350,7 @@ body.touch #act{top:calc(150px + var(--sat))}body.touch #act b{font-size:26px}
 <section id="t-ai"><h2 class="ad-h">KI-Steuerung <span id="aim" class="chip"></span></h2>
 <div id="ail" class="ai-log"></div>
 <div class="ai-ex" id="aix"></div>
-<form id="aif" class="ai-in"><textarea id="aii" rows="2" placeholder="z. B. „Lass es schneien und schreib Willkommen in Vortexia an den Himmel“"></textarea><button id="ais" type="submit">Ausführen</button></form></section>
+<form id="aif" class="ai-in"><textarea id="aii" rows="2" placeholder="z. B. „Lass es schneien und schreib Willkommen in Vortexia an den Himmel“"></textarea><button id="ais" type="submit">Ausführen</button><button id="aisay" type="button" title="Text als Admin-Nachricht an alle Spieler senden">💬 An alle schreiben</button></form></section>
 <section id="t-world"><h2 class="ad-h">Welt</h2><div class="wgrid" id="wgrid"></div></section>
 <section id="t-players"><h2 class="ad-h">Spieler</h2><div id="plist"></div></section>
 <div id="t-bugs"></div><div id="t-tele"></div><div id="t-eng"></div>
@@ -3175,14 +3176,14 @@ const Intro={
 
 /* ===== Firebase: anonyme Spieler-Auth, Google-Login nur für Admin, Bug-Tracker + Live-Telemetrie in Firestore (schlanke Payloads),
    asynchron nachgeladen – das Spiel wartet NIE auf das Netz. Ohne Konfiguration: lokaler Modus (localStorage). ===== */
-const FIREBASE_CONFIG={apiKey:"AIzaSyDnkKhNeShgOKVIkYfxlgToZOxPuOdkL2A",authDomain:"vortexia-703d8.firebaseapp.com",databaseURL:"https://vortexia-703d8-default-rtdb.europe-west1.firebasedatabase.app",projectId:"vortexia-703d8",storageBucket:"vortexia-703d8.firebasestorage.app",messagingSenderId:"914859321232",appId:"1:914859321232:web:e817747d6fb65fd8cc3515"};
+const FIRESTORE_DB='default';const FIREBASE_CONFIG={apiKey:"AIzaSyDnkKhNeShgOKVIkYfxlgToZOxPuOdkL2A",authDomain:"vortexia-703d8.firebaseapp.com",databaseURL:"https://vortexia-703d8-default-rtdb.europe-west1.firebasedatabase.app",projectId:"vortexia-703d8",storageBucket:"vortexia-703d8.firebasestorage.app",messagingSenderId:"914859321232",appId:"1:914859321232:web:e817747d6fb65fd8cc3515"};
 /* Admin = wer das Dokument meta/admin lesen darf (Regel prüft deine E-Mail serverseitig – sie steht NICHT im Spielcode) */
 const FB_VER='10.12.2';
 const FB={on:false,user:null,db:null,auth:null,err:'',sid:Math.random().toString(36).slice(2,12),
  load(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=ok;s.onerror=()=>no(new Error('Laden fehlgeschlagen: '+src));document.head.appendChild(s)})},
  async init(){if(!FIREBASE_CONFIG.apiKey){this.err='nicht konfiguriert';return}
   try{const b=`https://www.gstatic.com/firebasejs/${FB_VER}/`;await this.load(b+'firebase-app-compat.js');await Promise.all([this.load(b+'firebase-auth-compat.js'),this.load(b+'firebase-firestore-compat.js')]);
-   firebase.initializeApp(FIREBASE_CONFIG);this.auth=firebase.auth();this.db=firebase.firestore();this.on=true;
+   firebase.initializeApp(FIREBASE_CONFIG);this.auth=firebase.auth();this.db=(()=>{/* Firestore-Datenbank „default“ (benannt, nicht „(default)“) */try{const A=firebase.app(),x=A._delegate.container.getProvider('firestore').getImmediate({identifier:FIRESTORE_DB});return new firebase.firestore.Firestore(A,x)}catch(e){console.warn('Firestore-DB',e);return firebase.firestore()}})();this.on=true;
    this.auth.getRedirectResult().catch(()=>{});
    this.auth.onAuthStateChanged(u=>{this.user=u;this.adminOK=false;if(!u)this.auth.signInAnonymously().catch(x=>this.err=x.message);
     else if(!u.isAnonymous)this.db.collection('meta').doc('admin').get().then(()=>{this.adminOK=true;UI.authChanged()}).catch(()=>{});UI.authChanged()})}
@@ -3256,7 +3257,7 @@ class Engine{
  /* ---- Qualitätsstufen + Auto-Erkennung ---- */
  resolveQ(){if(this.set.q!=='auto')return this.set.q;const gl=this.r.getContext(),dbg=gl.getExtension('WEBGL_debug_renderer_info'),gpu=dbg?gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL):'';this.gpu=gpu;
   if(/SwiftShader|llvmpipe|Software/i.test(gpu)||!this.r.capabilities.isWebGL2)return'low';
-  const mob=this.input.touch||/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);if(mob)return/Apple GPU|Adreno \(TM\) (7[3-9]|8)|Mali-G7[1-9]|Mali-G[7-9]\d\d|Immortalis/i.test(gpu)?'high':'mid';return'high'}
+  const mob=this.input.touch||/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);if(mob)return/Apple GPU|Adreno \(TM\) (7[3-9]|8)|Mali-G7[1-9]|Mali-G[7-9]\d\d|Immortalis/i.test(gpu)?'mid':'low';return'high'}
  applyQuality(first){const key=this.resolveQ(),q=Object.assign({},QUALITY[key]);GU.uQ.value={low:0,mid:1,high:2,ultra:3}[key]||0;this.qk=key;this.q=q;
   if(!this.set.rf)q.refl=false;const shadows=this.set.sh&&q.shadow>0,mob=this.input.touch;
   const prevSh=this.r.shadowMap.enabled;this.r.shadowMap.enabled=shadows;this.moon.castShadow=shadows;if(shadows){this.moon.shadow.mapSize.set(q.shadow,q.shadow);if(this.moon.shadow.map){this.moon.shadow.map.dispose();this.moon.shadow.map=null}}
@@ -3484,14 +3485,43 @@ const ENV={day:{day:1,dusk:0,nk:1},dusk:{day:.3,dusk:1,nk:1.1},night:{day:0,dusk
   const rain=s.wx=='rain'||s.wx=='storm',snow=s.wx=='snow';GU.uRain.value+=((rain?1:0)-GU.uRain.value)*Math.min(1,dt*2);
   const w=GU.uWet.value,wt=rain?1:snow?.25:.1;GU.uWet.value=w+(wt-w)*Math.min(1,dt*(wt>w?.35:.012));
   const sc=GU.uSnowC.value;GU.uSnowC.value=clamp(sc+(snow?.025:-.006)*dt,0,1)}};
+/* ===== Musik & Sounds für Admin-Befehle: komplett im Spiel erzeugt (WebAudio), keine fremden Songs ===== */
+const MUSIC_STYLES={party:'Party',techno:'Techno',hiphop:'Hip-Hop',chill:'Chill',airhorn:'Airhorn',applaus:'Applaus',sirene:'Sirene',trommeln:'Trommelwirbel',off:'aus'};
+const Music={
+ ctx(){const S=VX&&VX.sfx;if(!S)return null;if(!S.ctx)S.init();return S.ctx},
+ bus(){const c=this.ctx();if(!c)return null;if(!this.g){this.g=c.createGain();this.g.gain.value=.55;this.g.connect(VX.sfx.out||c.destination)}return this.g},
+ stop(){if(this.timer){clearInterval(this.timer);this.timer=null}this.cur=null},
+ play(st){this.stop();if(!st||st=='off'||!MUSIC_STYLES[st])return;const c=this.ctx();if(!c||VX.set.snd===false)return;if(c.state=='suspended')try{c.resume()}catch(x){}
+  if(st=='airhorn')return this.airhorn();if(st=='applaus')return this.applause();if(st=='sirene')return this.siren();if(st=='trommeln')return this.roll();
+  this.loop(st)},
+ env(t,a,d,peak){const g=this.ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(.0008,t+a+d);g.connect(this.bus());return g},
+ osc(type,f,t,dur,peak,a=.005,f2){const c=this.ctx(),o=c.createOscillator();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur*.6);o.connect(this.env(t,a,dur,peak));o.start(t);o.stop(t+a+dur+.05)},
+ noise(t,dur,peak,hp=6000){const c=this.ctx(),s=c.createBufferSource();s.buffer=VX.sfx.noise;const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=hp;s.connect(f).connect(this.env(t,.002,dur,peak));s.start(t,Math.random());s.stop(t+dur+.05)},
+ kick(t){this.osc('sine',150,t,.32,.9,.002,45)},snare(t){this.noise(t,.16,.35,1800);this.osc('triangle',190,t,.1,.25)},hat(t,v=.12){this.noise(t,.04,v,8000)},clap(t){for(let i=0;i<3;i++)this.noise(t+i*.012,.09,.25,1200)},
+ /* Pattern-Schleife: 16tel-Raster, ca. 80 s lang */
+ loop(st){const c=this.ctx(),bpm={party:124,techno:130,hiphop:90,chill:76}[st],step=60/bpm/4,end=c.currentTime+80;let n=0,next=c.currentTime+.08;this.cur=st;
+  const chords={party:[[57,60,64],[53,57,60],[55,59,62],[52,55,59]],techno:[[45,48,52],[45,48,52],[43,47,50],[44,48,51]],hiphop:[[50,53,57],[46,50,53],[48,52,55],[45,48,52]],chill:[[60,64,67,71],[57,60,64,67],[53,57,60,64],[55,59,62,65]]}[st],mf=m=>440*Math.pow(2,(m-69)/12);
+  const tick=()=>{if(c.currentTime>end){this.stop();return}while(next<c.currentTime+.25){const i=n%16,bar=(n>>4)%4,ch=chords[bar];
+    if(st=='party'||st=='techno'){if(i%4==0)this.kick(next);if(i%4==2)this.hat(next,.16);if(i%8==4)this.clap(next);if(i%2==1)this.hat(next,.06);
+     if(i%2==0)this.osc('sawtooth',mf(ch[0]-12),next,step*1.6,.13);if(st=='party'&&(i==2||i==6||i==10||i==14))ch.forEach(m=>this.osc('square',mf(m+12),next,step*1.5,.035))}
+    else if(st=='hiphop'){if(i==0||i==7||i==10)this.kick(next);if(i==4||i==12)this.snare(next);if(i%2==0)this.hat(next,.09);if(i==0)ch.forEach(m=>this.osc('triangle',mf(m),next,step*14,.05,.02));if(i%4==0)this.osc('sine',mf(ch[0]-24),next,step*3,.3)}
+    else{if(i==0||i==10)this.kick(next);if(i==8)this.snare(next);if(i%4==2)this.hat(next,.05);if(i==0)ch.forEach(m=>this.osc('sine',mf(m),next,step*15,.06,.3))}
+    next+=step;n++}};tick();this.timer=setInterval(tick,90)},
+ airhorn(){const t=this.ctx().currentTime;[0,.32,.64].forEach(d=>[440,554,659].forEach(f=>this.osc('sawtooth',f,t+d,.25,.09,.01)))},
+ applause(){const t=this.ctx().currentTime;for(let i=0;i<140;i++)this.noise(t+Math.random()*3.5,.05,.06+Math.random()*.08,1500)},
+ siren(){const t=this.ctx().currentTime;for(let k=0;k<6;k++)this.osc('square',650,t+k*.9,.85,.06,.02,1100)},
+ roll(){const t=this.ctx().currentTime;for(let i=0;i<40;i++)this.snare(t+i*.05*(1-i/120));this.osc('sine',90,t+2.05,.6,.6,.002,40)}
+};
 const World={st:{wx:'clear',tm:'night',auto:true,holo:'VORTEXIA',sub:'VALOQIS STUDIO',tr:1,pd:1},fwT:0,smT:0,
  apply(d,remote){const E=VX;Object.assign(this.st,d);const s=this.st;
   if(d.wx!==undefined){const w=s.wx,fx=w=='rain'||w=='storm'||w=='snow';E.rain.on=fx&&E.set.rn!==false;E.rain.u.uSnow.value=w=='snow'?1:0;E.stormK=w=='storm'?4:w=='rain'?.35:0;E.fogK=w=='fog'?3.2:w=='clear'?.5:w=='cloudy'?.8:1;GU.uCloud.value=w=='clear'?.2:w=='cloudy'?1.1:w=='storm'?1.35:1;E.rain.setCount((w=='storm'?1.4:w=='snow'?.6:1)*({ultra:9000,high:6500,mid:3500,low:1600}[E.qk]))}
   if(d.holo!==undefined||d.sub!==undefined)E.extras.setHolo(s.holo,s.sub);
   if(d.tr!==undefined)E.cars.forEach((c,i)=>{if(i==0||c===E.player.car||c.spawned)return;const off=i/E.cars.length>s.tr;c.off=off;c.mesh.visible=!off&&c.vis});
   if(d.pd!==undefined)E.applyQuality&&E.npcDensity(s.pd);
-  if(d.msg&&d.msg.id!==this.lastMsg){this.lastMsg=d.msg.id;if(Date.now()-(d.msg.at||0)<20000||!remote)E.hud.say(d.msg.txt,'DURCHSAGE',7)}
+  if(d.msg&&d.msg.id!==this.lastMsg){this.lastMsg=d.msg.id;if(Date.now()-(d.msg.at||0)<20000||!remote)E.hud.say(d.msg.txt,'DER ADMIN SCHREIBT',8)}
   if(d.fw&&d.fw!==this.lastFw){this.lastFw=d.fw;if(Date.now()-d.fw<30000||!remote)this.fwT=14}
+  if(d.mu&&d.mu.at!==this.lastMu){this.lastMu=d.mu.at;if(Date.now()-(d.mu.at||0)<120000||!remote)Music.play(d.mu.s)}
+  if(d.pa&&d.pa!==this.lastPa){this.lastPa=d.pa;if(Date.now()-d.pa<60000||!remote){this.fwT=Math.max(this.fwT,22);Music.play('party')}}
   if(d.sm&&d.sm!==this.lastSm){this.lastSm=d.sm;if(Date.now()-d.sm<15000||!remote){this.smT=8}}},
  /* lokal anwenden + (Admin, online) an alle senden */
  set(d){this.apply(d,false);if(window.Online&&Online.on&&(FB.isAdmin()||!FB.on))try{Online.tr.world(d)}catch(x){}},
@@ -3504,6 +3534,8 @@ const World={st:{wx:'clear',tm:'night',auto:true,holo:'VORTEXIA',sub:'VALOQIS ST
   case'holo':this.set({holo:String(a.text||'').slice(0,28),sub:String(a.sub==null?this.st.sub:a.sub).slice(0,40)});log.push('Himmel: „'+a.text+'“');break;
   case'message':this.set({msg:{txt:String(a.text||'').slice(0,140),id:Math.random().toString(36).slice(2),at:Date.now()}});log.push('Durchsage');break;
   case'fireworks':this.set({fw:Date.now()});log.push('Feuerwerk');break;
+  case'party':this.set({pa:Date.now()});log.push('Party: Feuerwerk + Musik');break;
+  case'music':{const st=MUSIC_STYLES[a.style]?a.style:'off';this.set({mu:{s:st,at:Date.now()}});log.push(st=='off'?'Musik aus':'Musik: '+MUSIC_STYLES[st]);break}
   case'slowmo':this.set({sm:Date.now()});log.push('Zeitlupe');break;
   case'traffic':this.set({tr:clamp(+a.level,0,1)});log.push('Verkehr '+Math.round(a.level*100)+' %');break;
   case'peds':this.set({pd:clamp(+a.level,0,1)});log.push('Passanten '+Math.round(a.level*100)+' %');break;
@@ -3541,7 +3573,17 @@ const AI={
   if(has('heil','leben auf','munition','ammo','auffüllen'))A.push({type:'heal'});
   if(has('geld','euro','€','kohle','money'))A.push({type:'money',amount:+((s.match(/(\d[\d.]*)/)||[])[1]||'1000').replace(/\./g,'')||1000});
   if(has('explod','spreng','jag','in die luft'))A.push({type:'explode_cars',radius:+num||40});
-  const reply=A.length?'Erledigt. Ich habe '+A.length+' Aktion'+(A.length>1?'en':'')+' ausgeführt.':'Das habe ich nicht verstanden. Probier z. B. „Gewitter und schreib PARTY an den Himmel“ oder „Spawn 3 Autos“.';
+  let note='';
+  if(has('party','feier','fete','rave'))A.push({type:'party'});
+  else if(has('musik aus','musik stop','stopp die musik','stop die musik','ruhe','keine musik','mach aus'))A.push({type:'music',style:'off'});
+  else if(has('musik','song','lied','sound','beat','spiel','sirene','applaus','klatsch','airhorn','tröte','trommel','techno','hip hop','hip-hop','hiphop','rap','chill','lofi')){
+   const st=has('sirene','polizei')?'sirene':has('applaus','klatsch','jubel')?'applaus':has('airhorn','tröte','horn')?'airhorn':has('trommel','wirbel')?'trommeln':has('hip hop','hip-hop','hiphop','rap','drake','eminem','gangster')?'hiphop':has('chill','lofi','ruhig','entspann')?'chill':has('techno','rave','club')?'techno':'party';
+   A.push({type:'music',style:st});
+   if(/bieber|swift|drake|eminem|weeknd|rihanna|beyonc|ed sheeran|capital bra|apache|song von|lied von/.test(s))note=' Echte Songs von Künstlern darf ich nicht ins Spiel einbauen (Urheberrecht) – ich spiele einen passenden Beat.'}
+  /* Nichts erkannt → als Admin-Nachricht an alle senden */
+  if(!A.length&&raw.length)A.push({type:'message',text:raw.slice(0,140)});
+  const onlyMsg=A.length==1&&A[0].type=='message';
+  const reply=(onlyMsg?'Gesendet – alle sehen: „Der Admin schreibt: '+A[0].text+'“':'Erledigt. Ich habe '+A.length+' Aktion'+(A.length>1?'en':'')+' ausgeführt.')+note;
   return{reply,actions:A,local:true}},
  async ask(t){if(FB.on&&FB.isAdmin()){try{if(!window.firebase.functions)await FB.load(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-functions-compat.js`);
    const fn=firebase.app().functions('europe-west3').httpsCallable('vxAI'),r=await fn({prompt:t,state:World.st});if(r&&r.data&&Array.isArray(r.data.actions))return{reply:r.data.reply||'Erledigt.',actions:r.data.actions,local:false}}
@@ -3554,11 +3596,12 @@ const AI={
  UI.tab=function(t){_tab(t);['ai','world','players'].forEach(k=>$('#t-'+k).style.display=k==t?(k=='ai'?'flex':'block'):'none');$$('.ad-nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));
   if(t=='ai')this.aiTab();if(t=='world')this.worldTab();if(t=='players'){const up=()=>this.playersTab();up();this.ti=setInterval(up,1000)}};
  UI.aiTab=function(){$('#aim').textContent=FB.on&&FB.isAdmin()?'Claude + lokal':'lokaler Parser';
-  if(!this.aiInit){this.aiInit=true;const ex=['Lass es schneien','Gewitter und schreib PARTY AB 20 UHR an den Himmel','Sonnenuntergang','Feuerwerk über der Stadt','Spawn 3 Autos','Bring mich ins Casino','Durchsage: „Willkommen in Vortexia!“','Zeitlupe','Kein Verkehr','Sprenge alle Autos in der Nähe'];
+  if(!this.aiInit){this.aiInit=true;const ex=['Lass es schneien','Gewitter und schreib PARTY AB 20 UHR an den Himmel','Sonnenuntergang','Feuerwerk über der Stadt','Spawn 3 Autos','Bring mich ins Casino','Durchsage: „Willkommen in Vortexia!“','Zeitlupe','Kein Verkehr','Sprenge alle Autos in der Nähe','Party!','Spiel Hip-Hop-Musik','Airhorn','Musik aus','Hallo Leute, heute Abend Rennen am Hafen!'];
    $('#aix').innerHTML=ex.map(t=>`<button type="button">${esc(t)}</button>`).join('');$$('#aix button').forEach(b=>b.onclick=()=>{$('#aii').value=b.textContent;$('#aif').requestSubmit()});
    const add=(cls,html)=>{const d=document.createElement('div');d.className='ai-msg '+cls;d.innerHTML=html;$('#ail').appendChild(d);$('#ail').scrollTop=1e9;return d};
-   add('a','Hallo! Ich bin die KI der Admin-Zentrale. Schreib mir, was in der Stadt passieren soll: Wetter, Uhrzeit, Text am Himmel, Durchsagen, Feuerwerk, Autos, Teleport und mehr.');
+   add('a','Hallo! Ich bin die KI der Admin-Zentrale. Schreib mir, was in der Stadt passieren soll: Wetter, Uhrzeit, Text am Himmel, Party, Musik & Sounds, Feuerwerk, Autos, Teleport und mehr. Mit „💬 An alle schreiben“ erscheint dein Text bei allen als „Der Admin schreibt“.');
    $('#aii').onkeydown=ev=>{if(ev.key=='Enter'&&!ev.shiftKey){ev.preventDefault();$('#aif').requestSubmit()}};
+   $('#aisay').onclick=()=>{const t=$('#aii').value.trim();if(!t)return;$('#aii').value='';add('u',esc(t));World.run([{type:'message',text:t.slice(0,140)}]);add('a','Gesendet – alle sehen: <b>Der Admin schreibt:</b> „'+esc(t.slice(0,140))+'“')};
    $('#aif').onsubmit=async ev=>{ev.preventDefault();const t=$('#aii').value.trim();if(!t)return;$('#aii').value='';add('u',esc(t));const w=add('a','<i>denkt nach …</i>');$('#ais').disabled=true;
     const r=await AI.ask(t),log=World.run(r.actions);w.innerHTML=esc(r.reply)+(log.length?'<div class="acts">'+log.map(l=>`<span>${esc(l)}</span>`).join('')+'</div>':'')+`<div style="opacity:.45;font-size:11px;margin-top:6px">${r.local?'lokaler Parser':'Claude'}</div>`;$('#ais').disabled=false;$('#ail').scrollTop=1e9}}};
  UI.worldTab=function(){const s=World.st,b=(lbl,act,on)=>`<button data-a='${JSON.stringify(act)}' class="${on?'on':''}">${lbl}</button>`;

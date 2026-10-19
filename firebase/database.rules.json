@@ -168,6 +168,14 @@
           "sm": { ".validate": "newData.isNumber()" },
           "tr": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1" },
           "pd": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1" },
+          // Musik/Sound für alle (nur eingebaute, im Spiel erzeugte Stile) und Party (Feuerwerk + Musik)
+          "mu": {
+            ".validate": "newData.hasChildren(['s','at'])",
+            "s": { ".validate": "newData.isString() && newData.val().matches(/^(off|party|techno|hiphop|chill|airhorn|applaus|sirene|trommeln)$/)" },
+            "at": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          },
+          "pa": { ".validate": "newData.isNumber()" },
           "$other": { ".validate": false }
         }
       }
