@@ -2440,7 +2440,7 @@ class SFX{
   this.master=c.createGain();this.master.gain.value=.8;this.master.connect(c.destination);
   const comp=c.createDynamicsCompressor();comp.connect(this.master);this.out=comp;
   /* Regen-Rauschen + tiefe Stadt-Drone */
-  const rn=c.createBufferSource();rn.buffer=nb;rn.loop=true;const rf=c.createBiquadFilter();rf.type='bandpass';rf.frequency.value=2600;rf.Q.value=.5;this.rainG=c.createGain();this.rainG.gain.value=.0;rn.connect(rf).connect(this.rainG).connect(this.out);rn.start();
+  /* Regen-Rauschen entfernt (störte): rainG bleibt nur als stummer Platzhalter für update() */this.rainG=c.createGain();this.rainG.gain.value=0;
   const dr=c.createOscillator(),dr2=c.createOscillator(),dg=c.createGain();dr.frequency.value=55;dr2.frequency.value=82.4;dr.type=dr2.type='sine';dg.gain.value=.025;dr.connect(dg);dr2.connect(dg);dg.connect(this.out);dr.start();dr2.start();
   /* Motor */
   this.eo=c.createOscillator();this.eo.type='sawtooth';this.eo2=c.createOscillator();this.eo2.type='square';const ef=c.createBiquadFilter();ef.type='lowpass';ef.frequency.value=600;this.ef=ef;
@@ -2466,7 +2466,7 @@ class SFX{
  horn(){this.tone(392,390,.35,.12,'square');this.tone(494,492,.35,.1,'square')}
  thunder(){const c=this.ctx;if(!c||!this.on)return;setTimeout(()=>this.burst(2.6,240,40,.3,.5,'lowpass'),rand(300,1600))}
  update(car,rain){const c=this.ctx;if(!c)return;const t=c.currentTime;
-  this.rainG.gain.setTargetAtTime(this.on?rain*.07:0,t,.4);
+  
   const sp=car?Math.abs(car.vf):0,rpm=car?40+(sp%14)*5+sp*1.6:30;this.eo.frequency.setTargetAtTime(rpm,t,.05);this.eo2.frequency.setTargetAtTime(rpm*.5,t,.05);this.ef.frequency.setTargetAtTime(300+sp*30,t,.1);
   this.eg.gain.setTargetAtTime(this.on&&car?.05+Math.min(sp,40)*.0025:0,t,.15)}
 }
