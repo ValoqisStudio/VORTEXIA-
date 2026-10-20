@@ -113,6 +113,8 @@ und einmal in der Realtime Database (damit du Wetter, Durchsagen usw. für **all
 
 ### c) In der Realtime Database eintragen
 
+> **Für dich (UID `7iZfMVbN87RJpgVqjXzuC5hGku82`) nicht nötig:** deine UID steht schon fest in `database.rules.json`. Es reicht, die Regeln einzufügen und zu veröffentlichen. Diesen Schritt brauchst du nur für **weitere** Admins.
+
 1. **Realtime Database** → **Daten**.
 2. Fahre mit der Maus über die oberste Zeile (deine Datenbank-Adresse) und klicke auf **+**.
 3. Name: `admins`. Den Wert leer lassen und im gleichen Kästchen nochmal auf das kleine **+** klicken.

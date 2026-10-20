@@ -6,7 +6,7 @@
 //  Grundsatz: ALLES ist verboten, außer es steht hier ausdrücklich erlaubt.
 //
 //  Admin (kommt unten mehrmals vor) = mit Google angemeldet (nicht anonym) UND
-//    Custom Claim admin = true  ODER  Eintrag  admins/<deine UID> = true.
+//    Custom Claim admin = true  ODER  deine UID (fest eingetragen)  ODER  Eintrag  admins/<UID> = true.
 //
 //  Bremse gegen Spam ("rl" = rate limit):
 //    Jeder Spieler hat unter rooms/main/rl/<UID> ein paar Zeitstempel.
@@ -40,7 +40,7 @@
         "p": {
           ".read": "auth != null",
           "$uid": {
-            ".write": "auth != null && (auth.uid === $uid || (!newData.exists() && (!data.child('ts').exists() || data.child('ts').val() < now - 120000 || (auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)))))",
+            ".write": "auth != null && (auth.uid === $uid || (!newData.exists() && (!data.child('ts').exists() || data.child('ts').val() < now - 120000 || (auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || (auth.uid === '7iZfMVbN87RJpgVqjXzuC5hGku82' || root.child('admins').child(auth.uid).val() === true))))))",
             ".validate": "newData.hasChildren(['n','x','y','z','h','v','a','w','p','hp','j','c','k','dd','ts']) && newData.child('ts').val() === now && newData.parent().parent().child('rl/' + $uid + '/p').val() === now && root.child('rooms/main/rl/' + $uid + '/p').val() !== now",
             // Name: Text, höchstens 24 Zeichen
             "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
@@ -78,7 +78,7 @@
           ".read": "auth != null",
           ".indexOn": ["t"],
           "$eid": {
-            ".write": "auth != null && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && (data.child('f').val() === auth.uid || data.child('t').val() < now - 60000 || (auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)))))",
+            ".write": "auth != null && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && (data.child('f').val() === auth.uid || data.child('t').val() < now - 60000 || (auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || (auth.uid === '7iZfMVbN87RJpgVqjXzuC5hGku82' || root.child('admins').child(auth.uid).val() === true))))))",
             ".validate": "newData.hasChildren(['f','t','k']) && $eid === newData.parent().parent().child('rl/' + auth.uid + '/e').val() && newData.parent().parent().child('rl/' + auth.uid + '/' + newData.child('k').val()).val() === now && root.child('rooms/main/rl/' + auth.uid + '/' + newData.child('k').val()).val() !== now && root.child('rooms/main/p/' + auth.uid).exists() && (newData.child('k').val() === 'd' || root.child('rooms/main/p/' + auth.uid + '/dd').val() === 0) && ((newData.child('k').val() === 's' && newData.hasChildren(['a','w'])) || (newData.child('k').val() === 'h' && newData.hasChildren(['to','d'])) || (newData.child('k').val() === 'd' && newData.hasChild('by')))",
             "f": { ".validate": "newData.val() === auth.uid" },
             "t": { ".validate": "newData.val() === now" },
@@ -119,9 +119,9 @@
         //   p = letzte Position   → mindestens 40 ms Abstand (das Spiel sendet alle 100 ms)
         //   e = Schlüssel des Ereignisses aus demselben Schreibvorgang
         "rl": {
-          ".write": "auth != null && !newData.exists() && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+          ".write": "auth != null && !newData.exists() && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || (auth.uid === '7iZfMVbN87RJpgVqjXzuC5hGku82' || root.child('admins').child(auth.uid).val() === true))",
           "$uid": {
-            ".write": "auth != null && !newData.exists() && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+            ".write": "auth != null && !newData.exists() && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || (auth.uid === '7iZfMVbN87RJpgVqjXzuC5hGku82' || root.child('admins').child(auth.uid).val() === true))",
             "s": {
               ".write": "auth != null && auth.uid === $uid && newData.exists()",
               ".validate": "newData.val() === now && (!data.exists() || now - data.val() >= 30)"
@@ -150,7 +150,7 @@
         // Lesen: alle angemeldeten Spieler. Schreiben: NUR Admins.
         "w": {
           ".read": "auth != null",
-          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (auth.token.admin === true || (auth.uid === '7iZfMVbN87RJpgVqjXzuC5hGku82' || root.child('admins').child(auth.uid).val() === true))",
           "wx": { ".validate": "newData.isString() && newData.val().matches(/^(clear|cloudy|rain|storm|snow|fog)$/)" },
           "tm": { ".validate": "newData.isString() && newData.val().matches(/^(morning|day|dusk|night|midnight)$/)" },
           "auto": { ".validate": "newData.isBoolean()" },
